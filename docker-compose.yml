@@ -4,14 +4,15 @@ services:
     container_name: tvhub
     restart: unless-stopped
     ports:
-      # Localhost only: anyone who can open this page can control your TV.
-      # To use it from other devices (or from the Home Assistant integration, which runs on another machine),
-      # change to "8080:8080" and set TVHUB_TOKEN below.
-      - "127.0.0.1:8080:8080"
+      # Localhost only by default: anyone who can open this page can control your TV.
+      # To reach it from other devices (e.g. the Home Assistant integration), create a `.env` file next to this one:
+      #   TVHUB_BIND=0.0.0.0
+      #   TVHUB_TOKEN=a-long-random-string
+      - "${TVHUB_BIND:-127.0.0.1}:8080:8080"
     environment:
       TZ: "UTC"
       # TV_HOST: "192.168.1.50"        # optional: seeds a first Android TV; you can add TVs from the web UI
-      # TVHUB_TOKEN: "pick-a-long-random-string"
+      TVHUB_TOKEN: "${TVHUB_TOKEN:-}"      # set it in .env when TVHUB_BIND is not 127.0.0.1
       # Home Assistant: you can set this from the web UI (button "Home Assistant"). These only seed the defaults.
       # MQTT_HOST: "192.168.1.10"
       # MQTT_PORT: "1883"

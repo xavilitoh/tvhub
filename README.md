@@ -75,7 +75,7 @@ Settings are saved in `/data/ha.json` (readable only by the TVHub user, password
 
 MQTT can't create `media_player` entities, so TVHub also ships a small Home Assistant integration (`custom_components/tvhub`). It gives every TV a **media_player** with on/off, volume (slider, steps, mute), play/pause/stop/rewind/forward, and the **app list as sources** — it works with the standard media control card, voice assistants and automations (`media_player.select_source`, `media_player.volume_set`…).
 
-1. Let Home Assistant reach TVHub: in `docker-compose.yml` publish the port as `"8080:8080"` and set `TVHUB_TOKEN`, then `docker compose up -d --build`.
+1. Let Home Assistant reach TVHub: create a `.env` file next to `docker-compose.yml` (it is git-ignored) with `TVHUB_BIND=0.0.0.0` and `TVHUB_TOKEN=<a long random string>` (e.g. `openssl rand -hex 16`), then `docker compose up -d --build`. Open the web UI once as `http://localhost:8080/?token=<token>`.
 2. Install the integration with **HACS**: [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=xavilitoh&repository=tvhub&category=integration)
    or by hand: HACS → ⋮ → *Custom repositories* → `https://github.com/xavilitoh/tvhub`, category **Integration** → *Download* → restart Home Assistant. (Without HACS, copy `custom_components/tvhub` into your `config/custom_components/`.)
 3. *Settings → Devices & services → Add integration → TVHub*: the IP of the machine running TVHub, port 8080, and the token.
