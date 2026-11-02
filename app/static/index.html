@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TVHub</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0c10'/%3E%3Crect x='6' y='8' width='20' height='13' rx='3' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Cpath d='M12 25h8' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #07080b;
+    --panel: rgba(255,255,255,.055);
+    --panel-hi: rgba(255,255,255,.10);
+    --line: rgba(255,255,255,.09);
+    --text: #f2f3f5;
+    --dim: #8a8f9a;
+    --accent: #6ea8ff;
+    --ok: #3ddc84;
+    --warn: #ffb547;
+    --bad: #ff5c6c;
+    --glow: 90, 110, 160;
+    --r: 22px;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 18px 20px 28px; }
+
+  header { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 17px; letter-spacing: -.01em; }
+  .brand svg { width: 26px; height: 26px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
+    background: var(--panel); border: 1px solid var(--line); color: var(--dim); font-size: 13px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+  .dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .dot.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+  .dot.bad { background: var(--bad); }
+  .spacer { flex: 1; }
+  .host { display: flex; gap: 6px; }
+  input[type=text], input[type=password] {
+    background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    border-radius: 12px; padding: 8px 12px; font: inherit; min-width: 0;
+  }
+  input[type=text]::placeholder, input[type=password]::placeholder { color: #666b76; }
+  select {
+    background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    border-radius: 12px; padding: 8px 10px; font: inherit;
+  }
+  .btn {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px;
+    transition: background .15s, transform .08s;
+  }
+  .btn:hover { background: var(--panel-hi); }
+  .btn:active { transform: scale(.97); }
+
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 22px; align-items: start; }
+  @media (max-width: 960px) { main { grid-template-columns: 1fr; } }
+
+  /* ---- stage ---- */
+  .stage-wrap { position: relative; }
+  .stage-wrap::before {
+    content: ""; position: absolute; inset: -6% -4%; z-index: 0; border-radius: 40px;
+    background: radial-gradient(60% 60% at 50% 50%, rgba(var(--glow), .55), transparent 70%);
+    filter: blur(46px); opacity: .85; transition: background 1.2s ease;
+  }
+  .stage {
+    position: relative; z-index: 1; aspect-ratio: 16 / 9; width: 100%;
+    background: #000; border-radius: var(--r); overflow: hidden;
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.03);
+  }
+  canvas#screen { width: 100%; height: 100%; display: block; background: #000; }
+  .overlay {
+    position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+    padding: 24px; background: rgba(5,6,9,.78); backdrop-filter: blur(6px);
+    transition: opacity .25s; color: var(--dim);
+  }
+  .overlay.hide { opacity: 0; pointer-events: none; }
+  .overlay h3 { color: var(--text); font-size: 17px; margin-bottom: 6px; font-weight: 600; }
+  .overlay p { max-width: 380px; }
+  .hud { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; z-index: 2; }
+  .hud span {
+    font-size: 11px; padding: 3px 8px; border-radius: 999px; background: rgba(0,0,0,.55);
+    border: 1px solid rgba(255,255,255,.12); color: #cfd3da; font-variant-numeric: tabular-nums;
+  }
+  .stage-tools { position: absolute; right: 10px; top: 10px; z-index: 2; display: flex; gap: 6px; opacity: 0; transition: opacity .2s; }
+  .stage:hover .stage-tools, .stage:focus-within .stage-tools { opacity: 1; }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.14);
+  }
+  .icon-btn:hover { background: rgba(255,255,255,.18); }
+  .icon-btn svg { width: 17px; height: 17px; }
+
+  .quality { display: flex; align-items: center; gap: 8px; margin-top: 18px; position: relative; z-index: 1; color: var(--dim); font-size: 13px; }
+
+  .apps { position: relative; z-index: 1; margin-top: 14px; display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; scrollbar-width: thin; }
+  .app {
+    flex: none; width: 88px; display: grid; justify-items: center; gap: 7px; padding: 10px 6px;
+    border-radius: 16px; border: 1px solid transparent; transition: background .15s, transform .1s;
+  }
+  .app:hover { background: var(--panel); border-color: var(--line); }
+  .app:active { transform: scale(.95); }
+  .app .ico {
+    width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center;
+    font-weight: 700; font-size: 18px; color: #fff; letter-spacing: -.02em;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 6px 16px rgba(0,0,0,.4);
+  }
+  .app small { font-size: 11.5px; color: #c7cad1; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app.active .ico { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- remote ---- */
+  .remote {
+    position: sticky; top: 16px;
+    background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035));
+    border: 1px solid var(--line); border-radius: 34px; padding: 26px 22px 22px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.45);
+  }
+  .pad {
+    width: 244px; height: 244px; margin: 0 auto 22px; border-radius: 50%; position: relative;
+    background:
+      radial-gradient(circle at 50% 35%, rgba(255,255,255,.10), transparent 60%),
+      radial-gradient(circle, #1a1c22 0%, #101217 100%);
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: inset 0 2px 6px rgba(255,255,255,.05), inset 0 -10px 24px rgba(0,0,0,.5), 0 10px 30px rgba(0,0,0,.4);
+    display: grid; grid-template: 1fr 1fr 1fr / 1fr 1fr 1fr;
+  }
+  .pad button { display: grid; place-items: center; color: #cfd3da; border-radius: 50%; transition: background .12s, color .12s, transform .08s; }
+  .pad button:hover { background: rgba(255,255,255,.07); color: #fff; }
+  .pad button:active, .pad button.flash { background: rgba(110,168,255,.28); color: #fff; transform: scale(.94); }
+  .pad svg { width: 22px; height: 22px; }
+  .pad .up { grid-area: 1 / 2; border-radius: 50% 50% 14px 14px; }
+  .pad .down { grid-area: 3 / 2; border-radius: 14px 14px 50% 50%; }
+  .pad .left { grid-area: 2 / 1; border-radius: 50% 14px 14px 50%; }
+  .pad .right { grid-area: 2 / 3; border-radius: 14px 50% 50% 14px; }
+  .pad .ok {
+    grid-area: 2 / 2; border-radius: 50%; font-weight: 650; font-size: 13px; letter-spacing: .05em;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+  }
+
+  .row { display: grid; gap: 10px; margin-bottom: 10px; }
+  .row.c2 { grid-template-columns: 1fr 1fr; }
+  .row.c3 { grid-template-columns: repeat(3, 1fr); }
+  .key {
+    display: grid; justify-items: center; gap: 4px; padding: 11px 6px; border-radius: 16px;
+    background: var(--panel); border: 1px solid var(--line); font-size: 11.5px; color: #c9ccd3;
+    transition: background .12s, transform .08s;
+  }
+  .key:hover { background: var(--panel-hi); color: #fff; }
+  .key:active, .key.flash { background: rgba(110,168,255,.28); transform: scale(.95); }
+  .key svg { width: 20px; height: 20px; }
+
+  .typebox { margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .typebox .line { display: flex; gap: 8px; }
+  .typebox input { flex: 1; }
+  .switch { display: flex; align-items: center; gap: 10px; color: var(--dim); font-size: 12.5px; cursor: pointer; user-select: none; }
+  .switch input { appearance: none; width: 34px; height: 20px; border-radius: 999px; background: #2a2d36; position: relative; transition: background .2s; flex: none; }
+  .switch input::after { content: ""; position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .switch input:checked { background: var(--accent); }
+  .switch input:checked::after { transform: translateX(14px); }
+  .live-on { color: var(--accent); }
+
+  .hints { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); color: #6f7480; font-size: 11.5px; display: flex; flex-wrap: wrap; gap: 6px 12px; }
+  kbd { background: rgba(255,255,255,.08); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; color: #b9bdc6; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0;
+    background: #1b1d24; border: 1px solid var(--line); padding: 9px 16px; border-radius: 12px;
+    transition: .25s; pointer-events: none; z-index: 20;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  /* ---- multi-TV ---- */
+  .tvs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tvtab {
+    display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px;
+    background: var(--panel); border: 1px solid var(--line); color: #c9ccd3; transition: background .15s, border-color .15s;
+  }
+  .tvtab:hover { background: var(--panel-hi); }
+  .tvtab.active { background: rgba(110,168,255,.16); border-color: rgba(110,168,255,.55); color: #fff; }
+  .tvtab .badge { font-size: 10px; letter-spacing: .06em; padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,.08); color: var(--dim); }
+  .btn.primary { background: rgba(110,168,255,.2); border-color: rgba(110,168,255,.6); color: #fff; }
+  .btn.danger { color: var(--bad); }
+  .novideo {
+    position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center; padding: 24px;
+    background: radial-gradient(70% 70% at 50% 40%, #171a23, #0a0b0f);
+  }
+  .novideo[hidden] { display: none; }
+  .novideo svg { width: 64px; height: 64px; opacity: .85; }
+  .novideo h3 { font-size: 22px; font-weight: 650; letter-spacing: -.01em; }
+  .novideo p { color: var(--dim); max-width: 420px; }
+  .novideo .vol { font-size: 44px; font-weight: 300; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .stage.novid .hud, .stage.novid .stage-tools { display: none; }
+  .quality[hidden], .apps[hidden], .typebox[hidden], .stage-tools button[hidden] { display: none; }
+
+  dialog {
+    background: #14161c; color: var(--text); border: 1px solid var(--line); border-radius: 22px; padding: 22px;
+    width: min(460px, 92vw); box-shadow: 0 30px 80px rgba(0,0,0,.7);
+  }
+  dialog::backdrop { background: rgba(0,0,0,.62); backdrop-filter: blur(3px); }
+  dialog h2 { font-size: 18px; margin-bottom: 14px; }
+  dialog h3 { font-size: 14px; margin-bottom: 4px; }
+  dialog label { display: grid; gap: 5px; margin-bottom: 12px; font-size: 12.5px; color: var(--dim); }
+  dialog label small, dialog small { color: #6f7480; font-size: 11.5px; }
+  dialog input[type=text], dialog input[type=password], dialog select { width: 100%; }
+  dialog details { margin: 2px 0 12px; font-size: 12.5px; color: var(--dim); }
+  dialog details summary { cursor: pointer; margin-bottom: 8px; }
+  dialog .hint { color: var(--dim); font-size: 12.5px; margin: -6px 0 14px; line-height: 1.45; }
+  dialog .hastatus { display: flex; align-items: center; gap: 8px; font-size: 12.5px; margin: 0 0 6px; min-height: 1.4em; color: var(--dim); }
+  dialog .two { display: grid; grid-template-columns: 1fr 110px; gap: 10px; }
+  dialog #pairBox .two { grid-template-columns: 1fr 1fr; align-items: center; }
+  dialog .line { display: flex; gap: 8px; }
+  dialog .check { display: flex; align-items: center; gap: 8px; }
+  dialog .check input { width: auto; }
+  dialog #pairBox { border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 12px; background: var(--panel); }
+  dialog #pairBox p { color: var(--dim); font-size: 12.5px; margin-bottom: 8px; }
+  dialog .msg { color: var(--accent) !important; margin: 8px 0 0 !important; min-height: 1em; }
+  dialog .err { color: var(--bad); min-height: 1.2em; font-size: 12.5px; }
+  dialog .actions { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+  dialog[hidden], dialog [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="4" y="6" width="24" height="16" rx="4"/><path d="M11 27h10"/></svg>
+      TVHub
+    </div>
+    <nav class="tvs" id="tvTabs" aria-label="Tus TVs"></nav>
+    <button class="btn" id="btnAdd">+ Añadir TV</button>
+    <div class="spacer"></div>
+    <div class="pill" id="statusPill"><span class="dot" id="dot"></span><span id="statusText">Conectando…</span></div>
+    <button class="btn" id="btnHA" title="Conectar con Home Assistant (MQTT)"><span class="dot" id="haDot"></span> Home Assistant</button>
+    <button class="btn" id="btnEdit" title="Ajustes de esta TV" aria-label="Ajustes de esta TV">Ajustes</button>
+  </header>
+
+  <main>
+    <section>
+      <div class="stage-wrap">
+        <div class="stage" id="stage">
+          <canvas id="screen" width="1280" height="720"></canvas>
+          <div class="novideo" id="noVideo" hidden>
+            <svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="6" width="24" height="16" rx="4"/><path d="M11 27h10"/></svg>
+            <h3 id="nvName">TV</h3><p id="nvState"></p><div class="vol" id="nvVol"></div><p id="nvNote">Esta TV no permite ver su pantalla. El control funciona igual.</p>
+          </div>
+          <div class="overlay" id="overlay"><div><h3 id="ovTitle">Conectando a la TV…</h3><p id="ovMsg">Un momento.</p></div></div>
+          <div class="hud"><span id="hudMode">—</span><span id="hudFps">0 fps</span><span id="hudRes">—</span></div>
+          <div class="stage-tools">
+            <button class="icon-btn" id="btnShot" title="Guardar captura (S)" aria-label="Guardar captura">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            </button>
+            <button class="icon-btn" id="btnFull" title="Pantalla completa (F)" aria-label="Pantalla completa">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="quality">
+        <label for="quality">Calidad</label>
+        <select id="quality">
+          <option value="854x480|2000000">480p · ligera</option>
+          <option value="1280x720|4000000" selected>720p · equilibrada</option>
+          <option value="1920x1080|8000000">1080p · máxima</option>
+        </select>
+      </div>
+      <div class="apps" id="apps" aria-label="Apps"></div>
+    </section>
+
+    <aside class="remote" aria-label="Control remoto">
+      <div class="pad" role="group" aria-label="Navegación">
+        <button class="up" data-k="DPAD_UP" aria-label="Arriba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
+        <button class="left" data-k="DPAD_LEFT" aria-label="Izquierda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <button class="ok" data-k="DPAD_CENTER" aria-label="OK">OK</button>
+        <button class="right" data-k="DPAD_RIGHT" aria-label="Derecha"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button class="down" data-k="DPAD_DOWN" aria-label="Abajo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>
+
+      <div class="row c3">
+        <button class="key" data-k="BACK"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 010 0 6 6 0 016 6v1"/></svg>Atrás</button>
+        <button class="key" data-k="HOME"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H5z"/></svg>Inicio</button>
+        <button class="key" data-k="MENU"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg>Menú</button>
+      </div>
+      <div class="row c3">
+        <button class="key" data-k="MEDIA_REWIND"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 6v12L3 12zM21 6v12l-8-6z"/></svg>Retroceder</button>
+        <button class="key" data-k="MEDIA_PLAY_PAUSE"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l11-7z"/></svg>Play</button>
+        <button class="key" data-k="MEDIA_FAST_FORWARD"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 6v12l8-6zM3 6v12l8-6z"/></svg>Avanzar</button>
+      </div>
+      <div class="row c3">
+        <button class="key" data-k="VOLUME_DOWN"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 10.5a2.5 2.5 0 010 3"/></svg>Vol −</button>
+        <button class="key" data-k="VOLUME_MUTE"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M17 9l4 6M21 9l-4 6"/></svg>Mute</button>
+        <button class="key" data-k="VOLUME_UP"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 9a4 4 0 010 6M19 6.5a7.5 7.5 0 010 11"/></svg>Vol +</button>
+      </div>
+
+      <div class="typebox">
+        <div class="line">
+          <input type="text" id="textInput" placeholder="Escribe aquí y envía a la TV" autocomplete="off" spellcheck="false">
+          <button class="btn" id="btnSend">Enviar</button>
+        </div>
+        <label class="switch"><input type="checkbox" id="liveTyping"><span id="liveLabel">Teclado en vivo: lo que teclees llega a la TV</span></label>
+      </div>
+
+      <div class="hints">
+        <span><kbd>↑↓←→</kbd> mover</span><span><kbd>Enter</kbd> OK</span><span><kbd>Esc</kbd> atrás</span>
+        <span><kbd>H</kbd> inicio</span><span><kbd>Espacio</kbd> play</span><span><kbd>+</kbd><kbd>−</kbd> volumen</span>
+        <span><kbd>F</kbd> pantalla completa</span><span><kbd>S</kbd> captura</span>
+      </div>
+    </aside>
+  </main>
+</div>
+<dialog id="haDlg">
+  <form id="haForm" autocomplete="off">
+    <h2>Home Assistant (MQTT)</h2>
+    <p class="hint">TVHub publica tus TVs en Home Assistant por MQTT discovery: aparecen solas como dispositivos con botones, apps y sensores. Usa el broker de Home Assistant (add-on Mosquitto).</p>
+    <div class="two">
+      <label>IP o host del broker<input type="text" id="haHost" placeholder="192.168.1.10" spellcheck="false"></label>
+      <label>Puerto<input type="text" id="haPort" inputmode="numeric" placeholder="1883"></label>
+    </div>
+    <label>Usuario<input type="text" id="haUser" autocomplete="off" spellcheck="false"></label>
+    <label>Contraseña<input type="password" id="haPass" autocomplete="new-password"></label>
+    <label class="check"><input type="checkbox" id="haTls"> Conexión cifrada (TLS) <small>(normalmente puerto 8883)</small></label>
+    <label class="check" id="haInsRow"><input type="checkbox" id="haIns"> No verificar el certificado <small>(certificado propio)</small></label>
+    <details>
+      <summary>Avanzado</summary>
+      <div class="two" style="grid-template-columns: 1fr 1fr">
+        <label>Prefijo de TVHub<input type="text" id="haPrefix" placeholder="tvhub" spellcheck="false"></label>
+        <label>Discovery<input type="text" id="haDisc" placeholder="homeassistant" spellcheck="false" style="width:100%"></label>
+      </div>
+    </details>
+    <div class="hastatus"><span class="dot" id="haSDot"></span><span id="haStatus">Sin configurar</span></div>
+    <p id="haErr" class="err" role="alert"></p>
+    <div class="actions">
+      <button type="button" class="btn danger" id="haOff">Desactivar</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="haCancel">Cerrar</button>
+      <button type="submit" class="btn primary" id="haSave">Guardar y conectar</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="dlg">
+  <form id="tvForm" autocomplete="off">
+    <h2 id="dlgTitle">Añadir TV</h2>
+    <label>Nombre<input type="text" id="fName" placeholder="Sala, Cuarto…" maxlength="40"></label>
+    <label>Tipo
+      <select id="fType">
+        <option value="android">Android TV · Google TV · Fire TV (ADB)</option>
+        <option value="vidaa">Hisense VIDAA (MQTT)</option>
+        <option value="webos">LG webOS (red local)</option>
+      </select>
+    </label>
+    <div class="two">
+      <label>IP de la TV<input type="text" id="fHost" placeholder="192.168.1.50" spellcheck="false"></label>
+      <label>Puerto<input type="text" id="fPort" inputmode="numeric" placeholder="5555"></label>
+    </div>
+    <div id="vidaaOpts">
+      <label>MAC de la TV <small id="macHint">(solo TVs recientes; opcional)</small><input type="text" id="fMac" placeholder="AA:BB:CC:DD:EE:FF" spellcheck="false"></label>
+      <label class="check" id="tlsRow"><input type="checkbox" id="fTls" checked> Conexión cifrada <small>(desmárcala en modelos antiguos)</small></label>
+    </div>
+    <label>Enviar el volumen a
+      <select id="fVia"></select>
+      <small id="viaHelp">Los Fire Stick no controlan el volumen de la TV: elige aquí la TV (Hisense o LG) a la que está conectado.</small>
+    </label>
+    <section id="pairBox" hidden>
+      <h3>Emparejar con la TV</h3>
+      <p id="pairHelp">Pulsa el botón: la TV mostrará un PIN. Escríbelo aquí.</p>
+      <div class="two">
+        <button type="button" class="btn" id="btnPairStart">Mostrar PIN en la TV</button>
+        <div class="line" id="pinLine"><input type="text" id="fPin" inputmode="numeric" placeholder="PIN" size="6" maxlength="8"><button type="button" class="btn" id="btnPairSend">Emparejar</button></div>
+      </div>
+      <p id="pairMsg" class="msg"></p>
+    </section>
+    <p id="formErr" class="err" role="alert"></p>
+    <div class="actions">
+      <button type="button" class="btn danger" id="btnDelete">Eliminar</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="btnCancel">Cancelar</button>
+      <button type="submit" class="btn primary" id="btnSave">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const canvas = $("screen"), ctx = canvas.getContext("2d", { alpha: false });
+const QS = location.search;                                   // keeps ?token= on first requests
+const withQ = (u) => u + (QS ? (u.includes("?") ? "&" : "?") + QS.slice(1) : "");
+const store = {
+  get(k) { try { return localStorage.getItem(k) || ""; } catch (_) { return ""; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
+};
+
+// ------------------------------------------------------------------ state
+let tvs = [], cur = store.get("tvhub.tv"), vidaaOK = true, webosOK = true;
+const curTV = () => tvs.find((t) => t.id === cur) || null;
+const caps = () => (curTV() || { caps: {} }).caps;
+
+let toastTimer;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2000);
+}
+function showOverlay(title, msg) { $("ovTitle").textContent = title; $("ovMsg").textContent = msg; $("overlay").classList.remove("hide"); }
+function hideOverlay() { $("overlay").classList.add("hide"); }
+
+const TYPE_LABEL = { android: "ANDROID", vidaa: "VIDAA", webos: "WEBOS" };
+const DEF_PORT = { android: 5555, vidaa: 36669, webos: 3001 };
+const STATE_TXT = {
+  device: "Conectada", disconnected: "Sin conexión", unauthorized: "Acepta el aviso en la TV",
+  needs_pairing: "Falta emparejar (Ajustes → Emparejar)", no_host: "Sin IP",
+};
+
+// ------------------------------------------------------------------ rendering
+function renderTabs() {
+  const box = $("tvTabs"); box.textContent = "";
+  tvs.forEach((t, i) => {
+    const b = document.createElement("button"); b.className = "tvtab" + (t.id === cur ? " active" : "");
+    b.title = `${t.name} · ${t.host} · ${STATE_TXT[t.state] || t.state}` + (i < 9 ? `  (tecla ${i + 1})` : "");
+    const d = document.createElement("span"); d.className = "dot " + (t.state === "device" ? "ok" : t.state === "disconnected" ? "bad" : "warn");
+    const n = document.createElement("span"); n.textContent = t.name;
+    const g = document.createElement("span"); g.className = "badge"; g.textContent = TYPE_LABEL[t.type] || t.type.toUpperCase();
+    b.append(d, n, g); b.onclick = () => selectTV(t.id); box.append(b);
+  });
+}
+
+function renderPill() {
+  const t = curTV(), dot = $("dot"); dot.className = "dot";
+  if (!t) { $("statusText").textContent = "Sin TVs"; dot.classList.add("bad"); return; }
+  dot.classList.add(t.state === "device" ? "ok" : t.state === "disconnected" ? "bad" : "warn");
+  $("statusText").textContent = t.state === "device"
+    ? (t.model || t.name) + (t.app ? " · " + t.app : "") : STATE_TXT[t.state] || t.state;
+}
+
+function renderStage() {
+  const t = curTV(), stage = $("stage");
+  const novid = !!t && !t.caps.video;
+  stage.classList.toggle("novid", novid);
+  $("noVideo").hidden = !novid;
+  canvas.style.visibility = novid ? "hidden" : "visible";
+  if (!t) { showOverlay("Añade tu primera TV", "Pulsa «+ Añadir TV» arriba. Necesitas su IP y, en Android, la depuración ADB activada."); return; }
+  if (novid) {
+    hideOverlay();
+    $("nvName").textContent = t.name;
+    $("nvState").textContent = STATE_TXT[t.state] || t.state;
+    $("nvVol").textContent = t.volume != null ? (t.muted ? "🔇 " : "") + t.volume : "";
+    return;
+  }
+  if (t.state === "device") {
+    if (gotFrame) hideOverlay();
+    else if (!snapshotMode) showOverlay("Esperando imagen…", "Si la pantalla de la TV no cambia, mueve el cursor con las flechas.");
+  }
+  else if (t.state === "unauthorized") showOverlay("Autoriza la depuración USB", "En la TV aparece «¿Permitir depuración USB?». Marca «Permitir siempre» y acepta.");
+  else showOverlay("No llego a la TV", "Comprueba que está encendida (no en reposo), que la IP es correcta y que la depuración ADB está activa.");
+}
+
+function renderRemote() {
+  const c = caps();
+  $("quality").parentElement.hidden = !c.video;
+  $("apps").hidden = !c.apps;
+  document.querySelector(".typebox").hidden = !c.text;
+  $("btnShot").hidden = !c.snapshot;
+  $("btnFull").hidden = !c.video;
+  const t = curTV(), via = t && t.volume_via ? tvs.find((x) => x.id === t.volume_via) : null;
+  document.querySelectorAll('[data-k^="VOLUME_"]').forEach((b) => { b.title = via ? `Se envía a ${via.name}` : ""; });
+}
+
+function renderAll() { renderTabs(); renderPill(); renderStage(); renderRemote(); markActiveApp(); }
+
+// ------------------------------------------------------------------ control socket
+let ctl, ctlBackoff = 500;
+function connectControl() {
+  ctl = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws/control" + QS);
+  ctl.onopen = () => { ctlBackoff = 500; };
+  ctl.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    if (m.t === "list") { tvs = m.tvs; afterList(); }
+    else if (m.t === "status") {
+      const i = tvs.findIndex((t) => t.id === m.id), prev = i >= 0 ? tvs[i] : null;
+      if (i >= 0) tvs[i] = m; else tvs.push(m);
+      if (m.id === cur) {
+        if (m.focus !== (prev && prev.focus)) markActiveApp();
+        if (m.state === "device" && !appsLoaded && m.caps.apps) loadApps();
+        renderPill(); renderStage(); renderRemote();
+      }
+      renderTabs();
+    }
+  };
+  ctl.onclose = () => { setTimeout(connectControl, ctlBackoff); ctlBackoff = Math.min(ctlBackoff * 2, 5000); };
+}
+function send(obj) { if (ctl && ctl.readyState === 1 && cur) ctl.send(JSON.stringify({ tv: cur, ...obj })); }
+function key(k) { send({ t: "key", k }); }
+
+function afterList() {
+  if (!curTV()) { const first = tvs[0]; if (first) { cur = first.id; store.set("tvhub.tv", cur); switchedTo(); } else { cur = ""; } }
+  else if (!videoStarted) switchedTo();
+  renderAll();
+}
+
+// ------------------------------------------------------------------ switching TVs
+let videoStarted = false;
+function selectTV(id) {
+  if (id === cur) return;
+  cur = id; store.set("tvhub.tv", id); switchedTo(); renderAll();
+}
+function switchedTo() {
+  videoStarted = true; gotFrame = false; appsLoaded = false; apps = [];
+  if (pending) { pending.close(); pending = null; }
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  $("apps").textContent = ""; $("hudFps").textContent = "0 fps"; $("hudRes").textContent = "—";
+  stopVideo();
+  const t = curTV();
+  if (t && t.caps.video) startVideo();
+  if (t && t.caps.apps && t.state === "device") loadApps();
+}
+
+// ------------------------------------------------------------------ video (WebCodecs) with snapshot fallback
+let vws, vgen = 0, decoder = null, curCodec = "", needKey = true, gotFrame = false, pending = null;
+let frames = 0, snapshotMode = false, snapTimer = null, videoBackoff = 500;
+
+function codecFromKeyframe(u8) {
+  for (let i = 0; i + 7 < u8.length; i++) {
+    if (u8[i] === 0 && u8[i + 1] === 0 && u8[i + 2] === 0 && u8[i + 3] === 1 && (u8[i + 4] & 0x1f) === 7) {
+      const h = (n) => n.toString(16).padStart(2, "0");
+      return "avc1." + h(u8[i + 5]) + h(u8[i + 6]) + h(u8[i + 7]);
+    }
+  }
+  return "";
+}
+function newDecoder(gen) {
+  if (decoder && decoder.state !== "closed") { try { decoder.close(); } catch (_) {} }
+  decoder = new VideoDecoder({
+    output: (f) => { if (gen !== vgen) { f.close(); return; } if (pending) pending.close(); pending = f; },
+    error: () => { if (gen === vgen) { needKey = true; curCodec = ""; reconnectVideo(); } },
+  });
+}
+function stopVideo() {
+  vgen++; stopSnapshots();
+  try { vws && (vws.onclose = null, vws.close()); } catch (_) {}
+  vws = null; curCodec = ""; needKey = true;
+}
+function startVideo() {
+  const t = curTV(); if (!t || !t.caps.video) return;
+  if (!("VideoDecoder" in window)) {
+    return startSnapshots(window.isSecureContext ? "Este navegador no soporta WebCodecs." :
+      "WebCodecs solo funciona en localhost o HTTPS. Abre http://localhost:8080 para el video fluido.");
+  }
+  const gen = ++vgen, [size, bitrate] = $("quality").value.split("|");
+  const ws = vws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host +
+    `/ws/video?tv=${t.id}&size=${size}&bitrate=${bitrate}` + (QS ? "&" + QS.slice(1) : ""));
+  ws.binaryType = "arraybuffer"; needKey = true; curCodec = ""; newDecoder(gen);
+  ws.onopen = () => { videoBackoff = 500; $("hudMode").textContent = "H.264 en vivo"; };
+  ws.onmessage = async (e) => {
+    if (gen !== vgen) return;
+    const buf = new Uint8Array(e.data), isKey = buf[0] === 1, data = buf.subarray(1);
+    if (isKey) {
+      const codec = codecFromKeyframe(data); if (!codec) return;
+      if (codec !== curCodec) {
+        const cfg = { codec, optimizeForLatency: true, avc: { format: "annexb" } };
+        const sup = await VideoDecoder.isConfigSupported(cfg).catch(() => ({ supported: false }));
+        if (gen !== vgen) return;
+        if (!sup.supported) return startSnapshots("Tu navegador no decodifica H.264 con WebCodecs (usa Chrome o Edge).");
+        newDecoder(gen); decoder.configure(cfg); curCodec = codec;
+      }
+      needKey = false;
+    }
+    if (needKey || !decoder || decoder.state !== "configured") return;
+    if (decoder.decodeQueueSize > 8 && !isKey) return;           // never let latency build up
+    try { decoder.decode(new EncodedVideoChunk({ type: isKey ? "key" : "delta", timestamp: performance.now() * 1000, data })); } catch (_) { needKey = true; }
+  };
+  ws.onclose = () => { if (gen === vgen && !snapshotMode) reconnectVideo(); };
+}
+function reconnectVideo() {
+  const gen = vgen; try { vws && (vws.onclose = null, vws.close()); } catch (_) {}
+  setTimeout(() => { if (gen === vgen && !snapshotMode) startVideo(); }, videoBackoff);
+  videoBackoff = Math.min(videoBackoff * 2, 5000);
+}
+function startSnapshots(reason) {
+  const gen = ++vgen; snapshotMode = true; try { vws && (vws.onclose = null, vws.close()); } catch (_) {}
+  $("hudMode").textContent = "capturas"; toast(reason);
+  const loop = async () => {
+    if (!snapshotMode || gen !== vgen) return;
+    const t = curTV();
+    if (t && t.state === "device") {
+      try {
+        const r = await fetch(withQ(`/api/tvs/${t.id}/snapshot?t=${Date.now()}`));
+        if (r.ok && gen === vgen) drawBitmap(await createImageBitmap(await r.blob()));
+      } catch (_) {}
+    }
+    snapTimer = setTimeout(loop, 250);
+  };
+  loop();
+}
+function stopSnapshots() { snapshotMode = false; clearTimeout(snapTimer); }
+
+function drawBitmap(bmp) {
+  if (canvas.width !== bmp.width || canvas.height !== bmp.height) { canvas.width = bmp.width; canvas.height = bmp.height; }
+  ctx.drawImage(bmp, 0, 0); bmp.close && bmp.close();
+  $("hudRes").textContent = canvas.width + "×" + canvas.height;
+  if (!gotFrame) { gotFrame = true; hideOverlay(); }
+  frames++;
+}
+function render() {
+  if (pending) {
+    const f = pending; pending = null;
+    if (canvas.width !== f.displayWidth || canvas.height !== f.displayHeight) { canvas.width = f.displayWidth; canvas.height = f.displayHeight; }
+    ctx.drawImage(f, 0, 0); f.close();
+    $("hudRes").textContent = canvas.width + "×" + canvas.height;
+    if (!gotFrame) { gotFrame = true; hideOverlay(); }
+    frames++;
+  }
+  requestAnimationFrame(render);
+}
+setInterval(() => { $("hudFps").textContent = frames + " fps"; frames = 0; }, 1000);
+
+// Ambient glow: average colour of the current frame, sampled twice a second.
+const probe = document.createElement("canvas"); probe.width = 16; probe.height = 9;
+const pctx = probe.getContext("2d", { willReadFrequently: true });
+setInterval(() => {
+  if (!gotFrame || !caps().video) return;
+  try {
+    pctx.drawImage(canvas, 0, 0, 16, 9);
+    const d = pctx.getImageData(0, 0, 16, 9).data; let r = 0, g = 0, b = 0, n = 0;
+    for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
+    r /= n; g /= n; b /= n;
+    const m = Math.max(r, g, b, 1), boost = Math.min(2.2, 170 / m);
+    document.documentElement.style.setProperty("--glow", [r, g, b].map((v) => Math.min(255, Math.round(v * boost))).join(","));
+  } catch (_) {}
+}, 500);
+
+// ------------------------------------------------------------------ apps
+let appsLoaded = false, apps = [];
+async function loadApps() {
+  const id = cur; appsLoaded = true;
+  try {
+    const list = await (await fetch(withQ(`/api/tvs/${id}/apps`))).json();
+    if (id !== cur) return;
+    apps = list; const box = $("apps"); box.textContent = "";
+    for (const a of apps) {
+      const b = document.createElement("button"); b.className = "app"; b.dataset.pkg = a.pkg; b.title = a.name;
+      const ico = document.createElement("div"); ico.className = "ico"; ico.style.background = a.color;
+      ico.textContent = a.name.replace(/[^A-Za-z0-9+]/g, "").slice(0, 2);
+      const s = document.createElement("small"); s.textContent = a.name;
+      b.append(ico, s); b.onclick = () => { send({ t: "app", pkg: a.pkg }); toast("Abriendo " + a.name + "…"); };
+      box.append(b);
+    }
+    markActiveApp();
+  } catch (_) { if (id === cur) appsLoaded = false; }
+}
+function markActiveApp() {
+  const t = curTV(), pkg = t ? t.focus : "";
+  document.querySelectorAll(".app").forEach((el) => el.classList.toggle("active", el.dataset.pkg === pkg));
+}
+
+// ------------------------------------------------------------------ input
+function flash(el) { el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 120); }
+document.querySelectorAll("[data-k]").forEach((el) => el.addEventListener("click", () => key(el.dataset.k)));
+
+const KEYMAP = {
+  ArrowUp: "DPAD_UP", ArrowDown: "DPAD_DOWN", ArrowLeft: "DPAD_LEFT", ArrowRight: "DPAD_RIGHT",
+  Enter: "DPAD_CENTER", Escape: "BACK", Backspace: "BACK", h: "HOME", H: "HOME", " ": "MEDIA_PLAY_PAUSE",
+  "+": "VOLUME_UP", "=": "VOLUME_UP", "-": "VOLUME_DOWN", _: "VOLUME_DOWN", m: "VOLUME_MUTE", M: "VOLUME_MUTE",
+};
+const live = () => $("liveTyping").checked;
+
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || $("dlg").open || $("haDlg").open) return;
+  const inField = e.target.tagName === "INPUT" || e.target.tagName === "SELECT";
+  if (inField && e.target !== $("liveTyping")) {
+    if (e.target === $("textInput") && e.key === "Enter") { e.preventDefault(); sendText(); }
+    return;
+  }
+  if (live() && caps().text) {
+    if (e.key === "Escape") { $("liveTyping").checked = false; liveChanged(); e.preventDefault(); return; }
+    if (e.key === "Backspace") { key("DEL"); e.preventDefault(); return; }
+    if (e.key === "Enter") { key("ENTER"); e.preventDefault(); return; }
+    if (e.key.startsWith("Arrow")) { key(KEYMAP[e.key]); e.preventDefault(); return; }
+    if (e.key.length === 1) { send({ t: "text", v: e.key }); e.preventDefault(); }
+    return;
+  }
+  if (/^[1-9]$/.test(e.key) && tvs[+e.key - 1]) { selectTV(tvs[+e.key - 1].id); return; }
+  if ((e.key === "f" || e.key === "F") && caps().video) { toggleFull(); return; }
+  if ((e.key === "s" || e.key === "S") && caps().snapshot) { saveShot(); return; }
+  const k = KEYMAP[e.key];
+  if (k) {
+    e.preventDefault(); key(k);
+    const btn = document.querySelector(`[data-k="${k}"]`); if (btn) flash(btn);
+  }
+});
+
+function sendText() { const v = $("textInput").value; if (v) { send({ t: "text", v }); $("textInput").value = ""; } }
+$("btnSend").onclick = sendText;
+function liveChanged() {
+  $("liveLabel").classList.toggle("live-on", live());
+  $("liveLabel").textContent = live() ? "Teclado en vivo ACTIVO · Esc para salir" : "Teclado en vivo: lo que teclees llega a la TV";
+  if (live()) { document.activeElement && document.activeElement.blur(); toast("Escribe: cada tecla va a la TV"); }
+}
+$("liveTyping").addEventListener("change", liveChanged);
+function toggleFull() { document.fullscreenElement ? document.exitFullscreen() : $("stage").requestFullscreen().catch(() => {}); }
+$("btnFull").onclick = toggleFull;
+function saveShot() { const a = document.createElement("a"); a.href = withQ(`/api/tvs/${cur}/snapshot?download=1`); a.click(); toast("Guardando captura…"); }
+$("btnShot").onclick = saveShot;
+$("quality").addEventListener("change", () => { gotFrame = false; stopVideo(); setTimeout(startVideo, 100); });
+
+// ------------------------------------------------------------------ add / edit dialog
+let editing = null;                                   // TV object being edited, or null when adding
+const dlg = $("dlg");
+function fillVia(selected) {
+  const sel = $("fVia"); sel.textContent = "";
+  const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "Esta misma TV"; sel.append(o0);
+  tvs.filter((t) => !editing || t.id !== editing.id).forEach((t) => {
+    const o = document.createElement("option"); o.value = t.id; o.textContent = t.name + (t.type === "android" ? "" : " (" + TYPE_LABEL[t.type] + ")"); sel.append(o);
+  });
+  sel.value = selected || "";
+}
+function typeChanged() {
+  const ty = $("fType").value, v = ty === "vidaa", w = ty === "webos";
+  $("vidaaOpts").hidden = !(v || w);
+  $("tlsRow").hidden = w;
+  $("macHint").textContent = w ? "(opcional; solo para encenderla)" : "(solo TVs recientes; opcional)";
+  $("fPort").placeholder = String(DEF_PORT[ty] || 5555);
+  $("fPort").disabled = w;
+  $("pairBox").hidden = !((v || w) && editing);
+  $("pinLine").hidden = w;
+  $("btnPairStart").textContent = w ? "Emparejar con la TV" : "Mostrar PIN en la TV";
+  $("pairHelp").textContent = w ? "Pulsa el botón y acepta el aviso que aparece en la TV (tienes 30 segundos)."
+    : "Pulsa el botón: la TV mostrará un PIN. Escríbelo aquí.";
+}
+$("fType").addEventListener("change", typeChanged);
+function openDialog(tv) {
+  editing = tv || null; $("formErr").textContent = ""; $("pairMsg").textContent = "";
+  $("dlgTitle").textContent = tv ? "Ajustes de " + tv.name : "Añadir TV";
+  $("fName").value = tv ? tv.name : ""; $("fType").value = tv ? tv.type : "android"; $("fType").disabled = !!tv;
+  $("fHost").value = tv ? tv.host : ""; $("fPort").value = tv && tv.port !== DEF_PORT[tv.type] ? tv.port : "";
+  $("fMac").value = tv ? tv.mac : ""; $("fTls").checked = tv ? tv.tls !== false : true;
+  $("btnDelete").hidden = !tv; fillVia(tv ? tv.volume_via : "");
+  $("fType").querySelector('[value="vidaa"]').disabled = !vidaaOK;
+  $("fType").querySelector('[value="webos"]').disabled = !webosOK;
+  typeChanged(); dlg.showModal(); $("fName").focus();
+}
+$("btnAdd").onclick = () => openDialog(null);
+$("btnEdit").onclick = () => { const t = curTV(); t ? openDialog(t) : openDialog(null); };
+$("btnCancel").onclick = () => dlg.close();
+
+$("tvForm").addEventListener("submit", async (e) => {
+  e.preventDefault(); $("formErr").textContent = "";
+  const body = { name: $("fName").value.trim(), type: $("fType").value, host: $("fHost").value.trim(), port: $("fPort").value.trim() || undefined,
+    mac: $("fMac").value.trim(), tls: $("fTls").checked, volume_via: $("fVia").value };
+  try {
+    const r = await fetch(withQ(editing ? `/api/tvs/${editing.id}` : "/api/tvs"), { method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (!r.ok) { $("formErr").textContent = j.error || "No se pudo guardar"; return; }
+    dlg.close();
+    if (!editing) { await new Promise((ok) => setTimeout(ok, 150)); selectTV(j.id); }
+    toast(editing ? "Guardado" : "TV añadida");
+  } catch (_) { $("formErr").textContent = "No se pudo contactar con el servidor"; }
+});
+$("btnDelete").onclick = async () => {
+  if (!editing || !confirm(`¿Eliminar «${editing.name}» de TVHub? (No se toca la TV.)`)) return;
+  await fetch(withQ(`/api/tvs/${editing.id}`), { method: "DELETE" });
+  const wasCur = editing.id === cur; dlg.close();
+  if (wasCur) { cur = ""; videoStarted = false; stopVideo(); }
+};
+async function pair(pin) {
+  $("pairMsg").textContent = editing.type === "webos" ? "Acepta el aviso en la TV…" : "…";
+  try {
+    const r = await fetch(withQ(`/api/tvs/${editing.id}/pair`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pin ? { pin } : {}) });
+    const j = await r.json(); $("pairMsg").textContent = j.message || j.error || "";
+  } catch (_) { $("pairMsg").textContent = "No se pudo contactar con el servidor"; }
+}
+$("btnPairStart").onclick = () => pair();
+$("btnPairSend").onclick = () => { const p = $("fPin").value.trim(); if (p) pair(p); };
+
+// ------------------------------------------------------------------ Home Assistant (MQTT)
+let ha = null;
+const haDlg = $("haDlg");
+function haDescribe(h) {
+  if (!h) return ["", "Sin datos"];
+  if (!h.available) return ["bad", "Falta la librería paho-mqtt en el servidor"];
+  if (!h.enabled) return ["", "Desactivado"];
+  if (h.connected) return ["ok", `Conectado a ${h.host}:${h.port}`];
+  return [h.error ? "bad" : "warn", h.error || `Conectando a ${h.host}:${h.port}…`];
+}
+function renderHA() {
+  const [cls, txt] = haDescribe(ha);
+  $("haDot").className = "dot " + cls; $("haSDot").className = "dot " + cls; $("haStatus").textContent = txt;
+  $("btnHA").title = "Home Assistant: " + txt;
+}
+async function refreshHA() {
+  try { ha = await (await fetch(withQ("/api/ha"))).json(); renderHA(); } catch (_) { /* server restarting */ }
+}
+function haTls() { $("haInsRow").hidden = !$("haTls").checked; }
+$("haTls").addEventListener("change", haTls);
+function openHA() {
+  $("haErr").textContent = "";
+  const h = ha || {};
+  $("haHost").value = h.host || ""; $("haPort").value = h.port && h.port !== 1883 ? h.port : "";
+  $("haUser").value = h.user || ""; $("haPass").value = ""; $("haPass").placeholder = h.has_password ? "•••••••• (sin cambios)" : "";
+  $("haTls").checked = !!h.tls; $("haIns").checked = !!h.insecure;
+  $("haPrefix").value = h.prefix && h.prefix !== "tvhub" ? h.prefix : ""; $("haDisc").value = h.discovery && h.discovery !== "homeassistant" ? h.discovery : "";
+  haTls(); $("haOff").hidden = !(h.enabled); renderHA(); haDlg.showModal(); $("haHost").focus();
+}
+async function haPut(body, waitConnect) {
+  $("haErr").textContent = "";
+  try {
+    const r = await fetch(withQ("/api/ha"), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (!r.ok) { $("haErr").textContent = j.error || "No se pudo guardar"; return; }
+    ha = j; renderHA();
+    if (waitConnect && j.enabled) {                      // watch the connection come up (or fail) for a few seconds
+      for (let i = 0; i < 12 && !(ha.connected || ha.error); i++) { await new Promise((ok) => setTimeout(ok, 700)); await refreshHA(); }
+      if (ha.connected) { toast("Home Assistant conectado"); haDlg.close(); }
+    } else if (!j.enabled) { toast("Home Assistant desactivado"); haDlg.close(); }
+  } catch (_) { $("haErr").textContent = "No se pudo contactar con el servidor"; }
+}
+$("haForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const pass = $("haPass").value;
+  haPut({ host: $("haHost").value.trim(), port: $("haPort").value.trim() || undefined, user: $("haUser").value.trim(),
+    password: pass, keep_password: pass === "" && !!(ha && ha.has_password && ha.user === $("haUser").value.trim()),
+    tls: $("haTls").checked, insecure: $("haIns").checked, prefix: $("haPrefix").value.trim() || undefined,
+    discovery: $("haDisc").value.trim() || undefined }, true);
+});
+$("haOff").onclick = () => haPut({ host: "", port: ha && ha.port, user: ha && ha.user, password: "", keep_password: true,
+  tls: ha && ha.tls, insecure: ha && ha.insecure, prefix: ha && ha.prefix, discovery: ha && ha.discovery }, false);
+$("haCancel").onclick = () => haDlg.close();
+$("btnHA").onclick = openHA;
+
+// ------------------------------------------------------------------ boot
+fetch(withQ("/api/tvs")).then((r) => r.json()).then((j) => { vidaaOK = j.vidaa; webosOK = j.webos !== false; }).catch(() => {});
+refreshHA(); setInterval(refreshHA, 8000);
+connectControl(); requestAnimationFrame(render); renderAll();
+</script>
+</body>
+</html>

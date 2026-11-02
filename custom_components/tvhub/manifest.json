@@ -1,0 +1,12 @@
+{
+  "domain": "tvhub",
+  "name": "TVHub",
+  "codeowners": ["@xavilitoh"],
+  "config_flow": true,
+  "documentation": "https://github.com/xavilitoh/tvhub",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/xavilitoh/tvhub/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

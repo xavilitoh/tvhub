@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to TVHub",
+        "description": "Where your TVHub server runs (the one at http://IP:8080). If you set TVHUB_TOKEN, enter it here.",
+        "data": {
+          "host": "TVHub host or IP",
+          "port": "Port",
+          "token": "Token (optional)",
+          "ssl": "Use HTTPS"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach TVHub. Check the IP, the port, and that the port is published on your network (not just 127.0.0.1).",
+      "invalid_auth": "TVHub asks for a token and it is missing or wrong."
+    },
+    "abort": {
+      "already_configured": "This TVHub server is already configured."
+    }
+  }
+}
