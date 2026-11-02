@@ -9,15 +9,18 @@ from homeassistant.components.media_player import (
     MediaPlayerEntityFeature,
     MediaPlayerState,
 )
+import voluptuous as vol
+
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import config_validation as cv, entity_platform
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import TVHubConfigEntry, TVHubCoordinator
 from .api import TVHubError
-from .const import DOMAIN
+from .const import DOMAIN, KEY_PATTERN, SERVICE_SEND_KEY
 
 MAKER = {"android": "Android TV / Fire TV", "vidaa": "Hisense", "webos": "LG"}
 BASE = (MediaPlayerEntityFeature.TURN_ON | MediaPlayerEntityFeature.TURN_OFF | MediaPlayerEntityFeature.VOLUME_STEP
@@ -38,6 +41,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: TVHubConfigEntry, async_
 
     entry.async_on_unload(coordinator.async_add_listener(_add_new))
     _add_new()
+    entity_platform.async_get_current_platform().async_register_entity_service(
+        SERVICE_SEND_KEY, {vol.Required("key"): vol.All(cv.string, vol.Upper, vol.Match(KEY_PATTERN))}, "async_send_key")
 
 
 class TVHubPlayer(CoordinatorEntity[TVHubCoordinator], MediaPlayerEntity):
@@ -166,6 +171,10 @@ class TVHubPlayer(CoordinatorEntity[TVHubCoordinator], MediaPlayerEntity):
 
     async def async_media_next_track(self) -> None:
         await self._do(self.coordinator.client.key(self._tv_id, "MEDIA_FAST_FORWARD"))
+
+    async def async_send_key(self, key: str) -> None:
+        """tvhub.send_key — any remote key (DPAD_UP, BACK, HOME, MENU, MEDIA_PLAY_PAUSE…); used by the remote card."""
+        await self._do(self.coordinator.client.key(self._tv_id, key))
 
     async def async_select_source(self, source: str) -> None:
         for a in self.coordinator.apps.get(self._tv_id, []):

@@ -82,6 +82,26 @@ MQTT can't create `media_player` entities, so TVHub also ships a small Home Assi
 
 State refreshes every 3 s. *Volume set* works on LG and Hisense; a Fire Stick whose volume goes to your LG/Hisense (see *Volume routing*) shows and controls that TV's volume. *Turn on* uses Wake-on-LAN on LG (give TVHub the TV's MAC) and wake/sleep keys on Android TV.
 
+### 3. Remote card for your dashboard
+
+The integration also ships a card with the same remote as the web UI: d‑pad, OK, Back / Home / Menu, transport and volume. Hold an arrow or a volume key and it repeats. It is loaded automatically — no resource to add.
+
+```yaml
+type: custom:tvhub-remote
+entity: media_player.lg_sala      # any TVHub media_player
+# optional: name, show_power, show_volume, show_media
+```
+
+You can also pick it from *Add card → TVHub Remote* and fill it in with the visual editor. After updating through HACS, restart Home Assistant and hard‑refresh the browser (Ctrl/Cmd+Shift+R) so the new card file is loaded.
+
+The keys go through a service you can use in automations and scripts too:
+
+```yaml
+action: tvhub.send_key
+target: { entity_id: media_player.lg_sala }
+data: { key: HOME }               # DPAD_UP, DPAD_CENTER, BACK, MENU, MEDIA_PLAY_PAUSE, VOLUME_UP…
+```
+
 ## Upgrading from the old name (TVDeck)
 
 The project used to be called TVDeck. Your TV list, ADB key and pairings live in the Docker volume `tvdeck-data`; the new volume is `tvhub-data`. Copy it once before starting the new container:

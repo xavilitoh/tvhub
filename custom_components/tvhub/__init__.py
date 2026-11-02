@@ -6,17 +6,25 @@ import time
 from datetime import timedelta
 from typing import Any
 
+from pathlib import Path
+
+from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SSL, CONF_TOKEN, Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.typing import ConfigType
+from homeassistant.loader import async_get_integration
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import TVHubClient, TVHubError
-from .const import APPS_TTL, DOMAIN, SCAN_INTERVAL
+from .const import APPS_TTL, DOMAIN, FRONTEND_URL, SCAN_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.MEDIA_PLAYER]
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 type TVHubConfigEntry = ConfigEntry["TVHubCoordinator"]
 
@@ -57,6 +65,15 @@ class TVHubCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             self._apps_at[tv_id] = time.monotonic() - APPS_TTL + 30      # retry in 30 s
         finally:
             self._apps_busy.discard(tv_id)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Serve the TVHub remote card (custom:tvhub-remote) and load it in every dashboard — nothing to add by hand."""
+    path = Path(__file__).parent / "frontend" / "tvhub-remote-card.js"
+    await hass.http.async_register_static_paths([StaticPathConfig(FRONTEND_URL, str(path), cache_headers=False)])
+    version = (await async_get_integration(hass, DOMAIN)).version
+    add_extra_js_url(hass, f"{FRONTEND_URL}?v={version}")
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: TVHubConfigEntry) -> bool:

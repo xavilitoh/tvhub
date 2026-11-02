@@ -4,13 +4,32 @@
       "user": {
         "title": "Conectar con TVHub",
         "description": "Indica dónde corre tu servidor TVHub (el de http://IP:8080). Si definiste TVHUB_TOKEN, escríbelo aquí.",
-        "data": { "host": "IP o host de TVHub", "port": "Puerto", "token": "Token (opcional)", "ssl": "Usar HTTPS" }
+        "data": {
+          "host": "IP o host de TVHub",
+          "port": "Puerto",
+          "token": "Token (opcional)",
+          "ssl": "Usar HTTPS"
+        }
       }
     },
     "error": {
       "cannot_connect": "No se pudo conectar con TVHub. Comprueba la IP, el puerto y que el puerto esté publicado en la red (no solo en 127.0.0.1).",
       "invalid_auth": "TVHub pide un token y falta o es incorrecto."
     },
-    "abort": { "already_configured": "Este servidor TVHub ya está configurado." }
+    "abort": {
+      "already_configured": "Este servidor TVHub ya está configurado."
+    }
+  },
+  "services": {
+    "send_key": {
+      "name": "Send key",
+      "description": "Sends a remote key to the TV (DPAD_UP, DPAD_CENTER, BACK, HOME, MENU, MEDIA_PLAY_PAUSE, VOLUME_UP…).",
+      "fields": {
+        "key": {
+          "name": "Key",
+          "description": "Key name, uppercase."
+        }
+      }
+    }
   }
 }

@@ -19,5 +19,17 @@
     "abort": {
       "already_configured": "This TVHub server is already configured."
     }
+  },
+  "services": {
+    "send_key": {
+      "name": "Send key",
+      "description": "Sends a remote key to the TV (DPAD_UP, DPAD_CENTER, BACK, HOME, MENU, MEDIA_PLAY_PAUSE, VOLUME_UP…).",
+      "fields": {
+        "key": {
+          "name": "Key",
+          "description": "Key name, uppercase."
+        }
+      }
+    }
   }
 }
