@@ -3,8 +3,8 @@
 **One web remote for all your TVs — Android TV / Fire TV with a live picture of the screen, LG webOS, and Hisense VIDAA.**
 Keep a list of TVs, switch between them with one click (or keys <kbd>1</kbd>–<kbd>9</kbd>). Runs in Docker, opens in your browser.
 
-![TVHub UI against a simulated TV (test pattern)](docs/ui-multitv.png)
-<sub>The UI above is running against a simulated TV that streams a test pattern.</sub>
+![TVHub: live screen, network search, wall view (simulated TVs)](docs/demo.gif)
+<sub>Recorded against simulated TVs: a test pattern stands in for the screen, and the network search results are mocked.</sub>
 
 ## Supported TVs
 
@@ -16,6 +16,8 @@ Keep a list of TVs, switch between them with one click (or keys <kbd>1</kbd>–<
 
 ## What it does
 
+- **Wall view** — all your TVs at once (<kbd>W</kbd>): a refreshed screenshot for each Android TV, the state and volume for LG / Hisense. Click one to open it live.
+- **Network search** — one button finds LG, Hisense and Android / Fire TVs on your network and adds them.
 - **TV list** — add, rename, edit and delete TVs from the UI; stored in `/data/tvs.json`.
 - **Live screen** (Android) — real H.264 video from the TV (`screenrecord`), decoded in the browser with WebCodecs. Not screenshots.
 - **Ambient glow** — the light around the picture follows the colour of what's on screen.
@@ -25,13 +27,25 @@ Keep a list of TVs, switch between them with one click (or keys <kbd>1</kbd>–<
 
 ## Quick start
 
+One line, with the published image (Intel/AMD and Apple Silicon / Raspberry Pi):
+
+```bash
+docker run -d --name tvhub --restart unless-stopped -p 127.0.0.1:8080:8080 -v tvhub-data:/data ghcr.io/xavilitoh/tvhub:latest
+open http://localhost:8080
+```
+
+To reach it from other devices (for example the Home Assistant integration) publish the port on your network **and set a token**:
+`-p 8080:8080 -e TVHUB_TOKEN=a-long-random-string`.
+
+Or build it from source:
+
 ```bash
 git clone https://github.com/xavilitoh/tvhub && cd tvhub
 docker compose up -d --build
 open http://localhost:8080
 ```
 
-Then click **+ Añadir TV**.
+Then click **Buscar** to find your TVs on the network (see below), or **+ Añadir TV** if you already know the IP.
 
 ### Android TV / Fire TV
 Enable **Developer options → ADB debugging** (Fire TV: *Settings → My Fire TV → About*, click the device name 7 times; then *Developer options → ADB debugging*). Add the TV with its IP, port 5555. The first connection makes the TV ask **"Allow USB debugging?"** — accept with *Always allow*.
@@ -114,6 +128,23 @@ docker compose up -d --build                       # in the new folder
 ```
 
 `TVDECK_TOKEN` is still read if `TVHUB_TOKEN` is not set. The Home Assistant MQTT bridge withdraws its old `tvdeck_*` entities the first time it connects.
+
+## Finding your TVs
+
+**Buscar** scans the networks you give it and lists what it finds, so you don't have to type IPs:
+
+| Detected | Can TVHub control it? |
+|---|---|
+| LG webOS (ports 3000 + 3001) | ✅ — then *Ajustes → Emparejar* |
+| Hisense VIDAA (port 36669) | ✅ |
+| Android TV / Fire TV / Google TV with ADB on (port 5555) | ✅ |
+| Roku, Samsung, Chromecast, Android TV with ADB off | Shown, but not controllable (yet) |
+
+- It does a plain TCP sweep of the networks in the box (a /24 takes about 7 s; up to a /22 per scan). That works on every setup, **including Docker Desktop on macOS and Windows**. TVHub proposes the network you opened the page from; type others separated by commas (e.g. `192.168.1.0/24, 192.168.10.0/24` if your TVs sit on different VLANs).
+- Only private ranges are scanned (`192.168.x.x`, `10.x.x.x`, `172.16-31.x.x`).
+- On **Linux** you can also let it use SSDP multicast by sharing the host network: in `docker-compose.yml` replace the `ports:` block with `network_mode: host`. Docker Desktop on Mac/Windows does not forward multicast, so there the sweep is what finds your TVs.
+- Names come from the TV when it offers one (Roku, Samsung, Chromecast / Google TV); otherwise you get the TV type and its IP, and you can rename it when you add it.
+- A device that is off, or has ADB / network control disabled, won't show up. Turn it on and search again.
 
 ## Open it from another device
 

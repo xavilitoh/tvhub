@@ -1,11 +1,11 @@
-/* TVHub remote card for Home Assistant — d-pad + keys, same layout as the TVHub web remote.
+/* TVHub remote card for Home Assistant - d-pad + keys, same layout as the TVHub web remote.
    Usage:  type: custom:tvhub-remote
            entity: media_player.<your TV>
    Optional: name, show_power (default true), show_volume (default true), show_media (default true). */
 const TEXT = {
-  en: { back: "Back", home: "Home", menu: "Menu", rew: "Rewind", play: "Play", ff: "Forward", vd: "Vol −", mute: "Mute", vu: "Vol +",
+  en: { back: "Back", home: "Home", menu: "Menu", rew: "Rewind", play: "Play", ff: "Forward", vd: "Vol \u2212", mute: "Mute", vu: "Vol +",
         up: "Up", down: "Down", left: "Left", right: "Right", ok: "OK", power: "Power", unavailable: "Unavailable", pick: "Choose a TVHub media player" },
-  es: { back: "Atrás", home: "Inicio", menu: "Menú", rew: "Retroceder", play: "Play", ff: "Avanzar", vd: "Vol −", mute: "Mute", vu: "Vol +",
+  es: { back: "Atr\u00e1s", home: "Inicio", menu: "Men\u00fa", rew: "Retroceder", play: "Play", ff: "Avanzar", vd: "Vol \u2212", mute: "Mute", vu: "Vol +",
         up: "Arriba", down: "Abajo", left: "Izquierda", right: "Derecha", ok: "OK", power: "Encender / apagar", unavailable: "No disponible", pick: "Elige un reproductor TVHub" },
 };
 const REPEAT_AFTER = 420, REPEAT_EVERY = 130;      // ms: hold an arrow or a volume key to repeat it
@@ -126,7 +126,7 @@ class TVHubRemoteCard extends HTMLElement {
     card.classList.toggle("gone", gone);
     card.classList.toggle("off", !gone && st.state === "off");
     this.shadowRoot.querySelector(".title").textContent = this._config.name || st?.attributes?.friendly_name || this._config.entity;
-    const app = st?.state === "on" && st.attributes.app_name ? ` · ${st.attributes.app_name}` : "";
+    const app = st?.state === "on" && st.attributes.app_name ? ` \u00b7 ${st.attributes.app_name}` : "";
     const label = gone ? t.unavailable : (this._hass.formatEntityState ? this._hass.formatEntityState(st) : st.state);
     this.shadowRoot.querySelector(".sub").textContent = label + app;
   }

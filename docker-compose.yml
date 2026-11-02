@@ -3,6 +3,9 @@ services:
     build: .
     container_name: tvhub
     restart: unless-stopped
+    # Linux only: to let "Buscar TVs" also use SSDP multicast, drop the `ports:` block below and use
+    #   network_mode: host        (TVHub then listens on :8080 of the host itself; set TVHUB_TOKEN)
+    # Docker Desktop (Mac / Windows) cannot forward multicast; the network sweep works there without it.
     ports:
       # Localhost only by default: anyone who can open this page can control your TV.
       # To reach it from other devices (e.g. the Home Assistant integration), create a `.env` file next to this one:

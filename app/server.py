@@ -9,6 +9,7 @@ Drivers
 
 HTTP / WebSocket
   /api/tvs ...        list, add, edit, delete, pair, apps, launch, snapshot
+  /api/discover       find TVs on the network (GET: suggested networks, POST: scan)
   /ws/control         commands in (each carries the target TV id), status of every TV out
   /ws/video?tv=<id>   live video of an android TV, one WebSocket message per frame
 """
@@ -1015,6 +1016,34 @@ async def broadcast_list():
         await ha.sync()
 
 
+_scan_lock = asyncio.Lock()
+
+
+async def api_discover_suggest(request):
+    import discover
+    host = request.host.rsplit(":", 1)[0].strip("[]") if request.host else ""
+    return web.json_response({"suggest": discover.suggest(host)})
+
+
+async def api_discover(request):
+    """Look for TVs on the given networks (see discover.py). One scan at a time."""
+    import discover
+    try:
+        d = await request.json() if request.can_read_body else {}
+        cidrs = d.get("cidrs") or []
+        if isinstance(cidrs, str):
+            cidrs = re.split(r"[\s,;]+", cidrs)
+        if not isinstance(cidrs, list):
+            raise ValueError("Redes no válidas")
+        if _scan_lock.locked():
+            return web.json_response({"error": "Ya hay una búsqueda en curso"}, status=409)
+        async with _scan_lock:
+            res = await discover.scan(cidrs[:8], {tv.cfg.get("host") for tv in hub.tvs.values()})
+    except ValueError as e:
+        return web.json_response({"error": str(e)}, status=400)
+    return web.json_response(res)
+
+
 async def api_ha(request):
     return web.json_response(ha.status())
 
@@ -1226,6 +1255,8 @@ def make_app():
     app.add_routes([
         web.get("/", index),
         web.get("/api/tvs", api_list),
+        web.get("/api/discover", api_discover_suggest),
+        web.post("/api/discover", api_discover),
         web.get("/api/ha", api_ha),
         web.put("/api/ha", api_ha_put),
         web.post("/api/tvs", api_add),

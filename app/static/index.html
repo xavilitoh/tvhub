@@ -32,9 +32,10 @@
   button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
   button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  .wrap { max-width: 1240px; margin: 0 auto; padding: 18px 20px 28px; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 18px 20px 28px; }
 
-  header { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+  header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+  header .btn { padding: 8px 11px; }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 17px; letter-spacing: -.01em; }
   .brand svg { width: 26px; height: 26px; }
   .pill {
@@ -183,7 +184,7 @@
   /* ---- multi-TV ---- */
   .tvs { display: flex; gap: 8px; flex-wrap: wrap; }
   .tvtab {
-    display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border-radius: 999px;
     background: var(--panel); border: 1px solid var(--line); color: #c9ccd3; transition: background .15s, border-color .15s;
   }
   .tvtab:hover { background: var(--panel-hi); }
@@ -206,6 +207,8 @@
   dialog {
     background: #14161c; color: var(--text); border: 1px solid var(--line); border-radius: 22px; padding: 22px;
     width: min(460px, 92vw); box-shadow: 0 30px 80px rgba(0,0,0,.7);
+    margin: auto;                      /* the global `* { margin: 0 }` would pin it to the top-left corner */
+    max-height: 94vh; overflow: auto;
   }
   dialog::backdrop { background: rgba(0,0,0,.62); backdrop-filter: blur(3px); }
   dialog h2 { font-size: 18px; margin-bottom: 14px; }
@@ -228,6 +231,29 @@
   dialog .err { color: var(--bad); min-height: 1.2em; font-size: 12.5px; }
   dialog .actions { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
   dialog[hidden], dialog [hidden] { display: none !important; }
+  main[hidden], #wall[hidden] { display: none !important; }
+  .btn.on { background: rgba(110,168,255,.16); border-color: rgba(110,168,255,.55); color: #fff; }
+  #wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+  .wtile { text-align: left; color: inherit; font: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 0; overflow: hidden; cursor: pointer; transition: border-color .15s, transform .1s; }
+  .wtile:hover { border-color: rgba(110,168,255,.55); transform: translateY(-1px); }
+  .wtile.active { border-color: rgba(110,168,255,.75); }
+  .wpic { position: relative; aspect-ratio: 16 / 9; background: #07080b; display: grid; place-items: center; }
+  .wpic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .wph { position: relative; text-align: center; color: var(--dim); font-size: 12.5px; padding: 10px; }
+  .wph .wvol { font-size: 40px; font-weight: 300; color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .wmeta { display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 13px; }
+  .wmeta .wname { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wmeta .badge { font-size: 10px; letter-spacing: .06em; padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,.08); color: var(--dim); }
+  .wmeta .wapp { margin-left: auto; color: var(--dim); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
+  .wallhint { grid-column: 1 / -1; color: #6f7480; font-size: 11.5px; }
+  #scanDlg { width: min(520px, 94vw); }
+  #scanList { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; max-height: 44vh; overflow: auto; }
+  #scanList li { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+  #scanList .nm { font-weight: 600; font-size: 13.5px; }
+  #scanList .sub { color: var(--dim); font-size: 12px; }
+  #scanList .note { grid-column: 1 / -1; color: #6f7480; font-size: 11.5px; line-height: 1.4; }
+  #scanList .tag { font-size: 11px; color: var(--dim); }
+  #scanBusy { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 12.5px; margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -239,11 +265,15 @@
     </div>
     <nav class="tvs" id="tvTabs" aria-label="Tus TVs"></nav>
     <button class="btn" id="btnAdd">+ Añadir TV</button>
+    <button class="btn" id="btnScan" title="Buscar TVs en mi red">Buscar</button>
+    <button class="btn" id="btnWall" title="Ver todas las TVs a la vez (W)" aria-pressed="false">Pared</button>
     <div class="spacer"></div>
     <div class="pill" id="statusPill"><span class="dot" id="dot"></span><span id="statusText">Conectando…</span></div>
     <button class="btn" id="btnHA" title="Conectar con Home Assistant (MQTT)"><span class="dot" id="haDot"></span> Home Assistant</button>
     <button class="btn" id="btnEdit" title="Ajustes de esta TV" aria-label="Ajustes de esta TV">Ajustes</button>
   </header>
+
+  <section id="wall" hidden aria-label="Todas las TVs"></section>
 
   <main>
     <section>
@@ -313,7 +343,7 @@
       <div class="hints">
         <span><kbd>↑↓←→</kbd> mover</span><span><kbd>Enter</kbd> OK</span><span><kbd>Esc</kbd> atrás</span>
         <span><kbd>H</kbd> inicio</span><span><kbd>Espacio</kbd> play</span><span><kbd>+</kbd><kbd>−</kbd> volumen</span>
-        <span><kbd>F</kbd> pantalla completa</span><span><kbd>S</kbd> captura</span>
+        <span><kbd>W</kbd> pared de TVs</span><span><kbd>F</kbd> pantalla completa</span><span><kbd>S</kbd> captura</span>
       </div>
     </aside>
   </main>
@@ -344,6 +374,23 @@
       <span class="spacer"></span>
       <button type="button" class="btn" id="haCancel">Cerrar</button>
       <button type="submit" class="btn primary" id="haSave">Guardar y conectar</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="scanDlg">
+  <form id="scanForm" autocomplete="off">
+    <h2>Buscar TVs en mi red</h2>
+    <p class="hint">TVHub explora las redes que indiques y detecta LG webOS, Hisense VIDAA y Android TV / Fire TV con ADB activo. También reconoce Roku, Samsung y Chromecast, pero esos todavía no se pueden controlar.</p>
+    <label>Redes a explorar <small>(separadas por comas; una /24 tarda unos 7 s)</small>
+      <input type="text" id="scanNets" placeholder="192.168.1.0/24, 192.168.10.0/24" spellcheck="false"></label>
+    <p id="scanErr" class="err" role="alert"></p>
+    <div id="scanBusy" hidden><span class="dot warn"></span><span id="scanBusyTxt">Explorando…</span></div>
+    <ul id="scanList"></ul>
+    <p class="hint" id="scanFoot" hidden></p>
+    <div class="actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="scanClose">Cerrar</button>
+      <button type="submit" class="btn primary" id="scanGo">Buscar</button>
     </div>
   </form>
 </dialog>
@@ -449,7 +496,7 @@ function renderStage() {
   stage.classList.toggle("novid", novid);
   $("noVideo").hidden = !novid;
   canvas.style.visibility = novid ? "hidden" : "visible";
-  if (!t) { showOverlay("Añade tu primera TV", "Pulsa «+ Añadir TV» arriba. Necesitas su IP y, en Android, la depuración ADB activada."); return; }
+  if (!t) { showOverlay("Añade tu primera TV", "Pulsa «Buscar» para encontrarlas en tu red, o «+ Añadir TV» si ya sabes su IP. En Android hace falta la depuración ADB activada."); return; }
   if (novid) {
     hideOverlay();
     $("nvName").textContent = t.name;
@@ -476,7 +523,7 @@ function renderRemote() {
   document.querySelectorAll('[data-k^="VOLUME_"]').forEach((b) => { b.title = via ? `Se envía a ${via.name}` : ""; });
 }
 
-function renderAll() { renderTabs(); renderPill(); renderStage(); renderRemote(); markActiveApp(); }
+function renderAll() { renderTabs(); renderPill(); renderStage(); renderRemote(); markActiveApp(); if (wallOn) renderWall(); }
 
 // ------------------------------------------------------------------ control socket
 let ctl, ctlBackoff = 500;
@@ -495,6 +542,7 @@ function connectControl() {
         renderPill(); renderStage(); renderRemote();
       }
       renderTabs();
+      if (wallOn) renderWall();
     }
   };
   ctl.onclose = () => { setTimeout(connectControl, ctlBackoff); ctlBackoff = Math.min(ctlBackoff * 2, 5000); };
@@ -675,7 +723,7 @@ const KEYMAP = {
 const live = () => $("liveTyping").checked;
 
 document.addEventListener("keydown", (e) => {
-  if (e.metaKey || e.ctrlKey || e.altKey || $("dlg").open || $("haDlg").open) return;
+  if (e.metaKey || e.ctrlKey || e.altKey || $("dlg").open || $("haDlg").open || $("scanDlg").open) return;
   const inField = e.target.tagName === "INPUT" || e.target.tagName === "SELECT";
   if (inField && e.target !== $("liveTyping")) {
     if (e.target === $("textInput") && e.key === "Enter") { e.preventDefault(); sendText(); }
@@ -687,6 +735,12 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Enter") { key("ENTER"); e.preventDefault(); return; }
     if (e.key.startsWith("Arrow")) { key(KEYMAP[e.key]); e.preventDefault(); return; }
     if (e.key.length === 1) { send({ t: "text", v: e.key }); e.preventDefault(); }
+    return;
+  }
+  if (e.key === "w" || e.key === "W") { setWall(!wallOn); return; }
+  if (wallOn) {                                         // in the wall only 1-9 and Esc do something; the remote keys would hit a TV you cannot see
+    if (e.key === "Escape") setWall(false);
+    else if (/^[1-9]$/.test(e.key) && tvs[+e.key - 1]) openFromWall(tvs[+e.key - 1].id);
     return;
   }
   if (/^[1-9]$/.test(e.key) && tvs[+e.key - 1]) { selectTV(tvs[+e.key - 1].id); return; }
@@ -836,6 +890,133 @@ $("haOff").onclick = () => haPut({ host: "", port: ha && ha.port, user: ha && ha
   tls: ha && ha.tls, insecure: ha && ha.insecure, prefix: ha && ha.prefix, discovery: ha && ha.discovery }, false);
 $("haCancel").onclick = () => haDlg.close();
 $("btnHA").onclick = openHA;
+
+// ------------------------------------------------------------------ wall (all TVs at once)
+// Android TVs show a screenshot refreshed every few seconds (one live H.264 stream per TV would load the sticks too much);
+// LG / Hisense show their state. Click a tile to open that TV with the live picture.
+let wallOn = false, wallTimer = null;
+const wallTiles = new Map();
+function wallTile(t) {
+  let w = wallTiles.get(t.id);
+  if (w) return w;
+  const el = document.createElement("button"); el.type = "button"; el.className = "wtile";
+  el.innerHTML = '<div class="wpic"><img alt="" hidden><div class="wph"><div class="wvol"></div><div class="wst"></div></div></div>' +
+    '<div class="wmeta"><span class="dot"></span><span class="wname"></span><span class="badge"></span><span class="wapp"></span></div>';
+  w = { id: t.id, el, img: el.querySelector("img"), url: "" };
+  el.onclick = () => openFromWall(t.id);
+  wallTiles.set(t.id, w);
+  return w;
+}
+function renderWall() {
+  const box = $("wall");
+  for (const [id, w] of wallTiles) if (!tvs.some((t) => t.id === id)) { if (w.url) URL.revokeObjectURL(w.url); w.el.remove(); wallTiles.delete(id); }
+  tvs.forEach((t, i) => {
+    const w = wallTile(t), e = w.el;
+    e.classList.toggle("active", t.id === cur);
+    e.title = `${t.name} · ${t.host}` + (i < 9 ? `  (tecla ${i + 1})` : "");
+    e.querySelector(".dot").className = "dot " + (t.state === "device" ? "ok" : t.state === "disconnected" ? "bad" : "warn");
+    e.querySelector(".wname").textContent = t.name;
+    e.querySelector(".badge").textContent = TYPE_LABEL[t.type] || t.type.toUpperCase();
+    e.querySelector(".wapp").textContent = t.state === "device" ? (t.app || "") : "";
+    e.querySelector(".wvol").textContent = t.volume != null ? (t.muted ? "🔇 " : "") + t.volume : "";
+    e.querySelector(".wst").textContent = t.state === "device" ? (t.caps.snapshot && !w.url ? "Cargando captura…" : (t.caps.snapshot ? "" : (t.volume != null ? "volumen" : "Conectada")))
+      : (STATE_TXT[t.state] || t.state);
+    w.img.hidden = !(w.url && t.state === "device");
+    if (box.children[i] !== e) box.insertBefore(e, box.children[i] || null);
+  });
+  let hint = box.querySelector(".wallhint");
+  if (!hint) { hint = document.createElement("p"); hint.className = "wallhint"; hint.textContent = "Clic en una TV para abrirla con imagen en vivo · teclas 1-9 · W o Esc para volver."; }
+  box.append(hint);
+}
+async function wallShot(t) {
+  const w = wallTiles.get(t.id); if (!w) return;
+  const ac = new AbortController(), to = setTimeout(() => ac.abort(), 15000);
+  try {
+    const r = await fetch(withQ(`/api/tvs/${t.id}/snapshot`), { signal: ac.signal });
+    if (!r.ok || !wallOn) return;
+    const url = URL.createObjectURL(await r.blob());
+    if (w.url) URL.revokeObjectURL(w.url);
+    w.url = url; w.img.src = url; w.img.hidden = false; renderWall();
+  } catch (_) { /* TV busy or gone: keep the last picture */ }
+  finally { clearTimeout(to); }
+}
+async function wallLoop() {
+  clearTimeout(wallTimer);
+  if (!wallOn) return;
+  if (!document.hidden) {
+    for (const t of tvs.slice()) { if (!wallOn) return; if (t.caps.snapshot && t.state === "device") await wallShot(t); }
+  }
+  if (wallOn) wallTimer = setTimeout(wallLoop, 1500);
+}
+function setWall(on) {
+  if (on === wallOn) return;
+  wallOn = on; $("wall").hidden = !on; document.querySelector("main").hidden = on;
+  $("btnWall").classList.toggle("on", on); $("btnWall").setAttribute("aria-pressed", String(on));
+  if (on) { stopVideo(); renderWall(); wallLoop(); }
+  else {
+    clearTimeout(wallTimer);
+    for (const w of wallTiles.values()) { if (w.url) URL.revokeObjectURL(w.url); w.url = ""; w.img.removeAttribute("src"); }
+    if (curTV()) switchedTo();
+    renderAll();
+  }
+}
+function openFromWall(id) { if (id !== cur) { cur = id; store.set("tvhub.tv", id); } setWall(false); }
+$("btnWall").onclick = () => setWall(!wallOn);
+document.addEventListener("visibilitychange", () => { if (wallOn && !document.hidden) wallLoop(); });
+
+// ------------------------------------------------------------------ discovery
+const scanDlg = $("scanDlg");
+const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+async function openScan() {
+  $("scanErr").textContent = ""; $("scanList").innerHTML = ""; $("scanFoot").hidden = true; $("scanBusy").hidden = true;
+  let nets = store.get("tvhub.nets") || "";
+  if (!nets) { try { nets = ((await (await fetch(withQ("/api/discover"))).json()).suggest || []).join(", "); } catch (_) { /* offline */ } }
+  $("scanNets").value = nets; scanDlg.showModal(); $("scanNets").focus();
+}
+function scanRow(f) {
+  const li = document.createElement("li");
+  const sub = [f.label !== f.name ? f.label : "", f.model, f.host].filter(Boolean).join(" · ");
+  li.innerHTML = `<div><div class="nm">${esc(f.name)}</div><div class="sub">${esc(sub)}</div></div><div></div>${f.note && !f.added ? `<div class="note">${esc(f.note)}</div>` : ""}`;
+  const cell = li.children[1];
+  if (f.added) cell.innerHTML = '<span class="tag">Ya añadida</span>';
+  else if (!f.addable) cell.innerHTML = '<span class="tag">No soportada</span>';
+  else {
+    const b = document.createElement("button"); b.type = "button"; b.className = "btn primary"; b.textContent = "Añadir";
+    b.onclick = async () => {
+      b.disabled = true;
+      try {
+        const r = await fetch(withQ("/api/tvs"), { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: f.name.slice(0, 40), type: f.type, host: f.host, port: f.port }) });
+        const j = await r.json();
+        if (!r.ok) { $("scanErr").textContent = j.error || "No se pudo añadir"; b.disabled = false; return; }
+        cell.innerHTML = '<span class="tag">Añadida ✓</span>'; toast("TV añadida");
+        if (!curTV()) { await new Promise((ok) => setTimeout(ok, 150)); selectTV(j.id); }
+      } catch (_) { $("scanErr").textContent = "No se pudo contactar con el servidor"; b.disabled = false; }
+    };
+    cell.appendChild(b);
+  }
+  return li;
+}
+$("scanForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const nets = $("scanNets").value.trim();
+  $("scanErr").textContent = ""; $("scanList").innerHTML = ""; $("scanFoot").hidden = true;
+  $("scanBusy").hidden = false; $("scanGo").disabled = true;
+  try {
+    const r = await fetch(withQ("/api/discover"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cidrs: nets }) });
+    const j = await r.json();
+    if (!r.ok) { $("scanErr").textContent = j.error || "No se pudo buscar"; return; }
+    store.set("tvhub.nets", nets);
+    j.found.forEach((f) => $("scanList").appendChild(scanRow(f)));
+    $("scanFoot").hidden = false;
+    $("scanFoot").textContent = j.found.length
+      ? `${j.found.length} dispositivo(s) en ${j.scanned} direcciones (${j.seconds} s). Si falta tu TV: enciéndela, activa ADB / el control por red y repite.`
+      : `No se encontró ninguna TV en ${j.scanned} direcciones. Comprueba que está encendida, en esa red y con ADB o el control por red activado.`;
+  } catch (_) { $("scanErr").textContent = "No se pudo contactar con el servidor"; }
+  finally { $("scanBusy").hidden = true; $("scanGo").disabled = false; }
+});
+$("scanClose").onclick = () => scanDlg.close();
+$("btnScan").onclick = openScan;
 
 // ------------------------------------------------------------------ boot
 fetch(withQ("/api/tvs")).then((r) => r.json()).then((j) => { vidaaOK = j.vidaa; webosOK = j.webos !== false; }).catch(() => {});
