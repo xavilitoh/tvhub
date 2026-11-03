@@ -7,16 +7,19 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0c10'/%3E%3Crect x='6' y='8' width='20' height='13' rx='3' fill='none' stroke='%23fff' stroke-width='2'/%3E%3Cpath d='M12 25h8' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
   :root {
-    --bg: #07080b;
-    --panel: rgba(255,255,255,.055);
-    --panel-hi: rgba(255,255,255,.10);
-    --line: rgba(255,255,255,.09);
-    --text: #f2f3f5;
-    --dim: #8a8f9a;
-    --accent: #6ea8ff;
-    --ok: #3ddc84;
-    --warn: #ffb547;
-    --bad: #ff5c6c;
+    --bg: #000;
+    --panel: #1c1c1e;
+    --panel-hi: #2c2c2e;
+    --fill: #2c2c2e;
+    --line: transparent;
+    --sep: rgba(255,255,255,.08);
+    --text: #f5f5f7;
+    --dim: #98989d;
+    --faint: #636366;
+    --accent: #0a84ff;
+    --ok: #30d158;
+    --warn: #ff9f0a;
+    --bad: #ff453a;
     --glow: 90, 110, 160;
     --r: 22px;
     color-scheme: dark;
@@ -146,7 +149,7 @@
   }
   .pad button { display: grid; place-items: center; color: #cfd3da; border-radius: 50%; transition: background .12s, color .12s, transform .08s; }
   .pad button:hover { background: rgba(255,255,255,.07); color: #fff; }
-  .pad button:active, .pad button.flash { background: rgba(110,168,255,.28); color: #fff; transform: scale(.94); }
+  .pad button:active, .pad button.flash { background: rgba(10,132,255,.28); color: #fff; transform: scale(.94); }
   .pad svg { width: 22px; height: 22px; }
   .pad .up { grid-area: 1 / 2; border-radius: 50% 50% 14px 14px; }
   .pad .down { grid-area: 3 / 2; border-radius: 14px 14px 50% 50%; }
@@ -166,7 +169,7 @@
     transition: background .12s, transform .08s;
   }
   .key:hover { background: var(--panel-hi); color: #fff; }
-  .key:active, .key.flash { background: rgba(110,168,255,.28); transform: scale(.95); }
+  .key:active, .key.flash { background: rgba(10,132,255,.28); transform: scale(.95); }
   .key svg { width: 20px; height: 20px; }
 
   .typebox { margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
@@ -196,9 +199,9 @@
     background: var(--panel); border: 1px solid var(--line); color: #c9ccd3; transition: background .15s, border-color .15s;
   }
   .tvtab:hover { background: var(--panel-hi); }
-  .tvtab.active { background: rgba(110,168,255,.16); border-color: rgba(110,168,255,.55); color: #fff; }
+  .tvtab.active { background: rgba(10,132,255,.16); border-color: rgba(10,132,255,.55); color: #fff; }
   .tvtab .badge { font-size: 10px; letter-spacing: .06em; padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,.08); color: var(--dim); }
-  .btn.primary { background: rgba(110,168,255,.2); border-color: rgba(110,168,255,.6); color: #fff; }
+  .btn.primary { background: rgba(10,132,255,.2); border-color: rgba(10,132,255,.6); color: #fff; }
   .btn.danger { color: var(--bad); }
   .novideo {
     position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center; padding: 24px;
@@ -207,7 +210,7 @@
   .novideo[hidden] { display: none; }
   .nvcard { display: grid; justify-items: center; gap: 6px; width: min(420px, 100%); }
   .nvart { width: 124px; height: 124px; display: grid; place-items: center; margin-bottom: 10px; border-radius: 30px; position: relative; }
-  .nvart::before { content: ""; position: absolute; inset: -18px; border-radius: 48px; background: radial-gradient(closest-side, rgba(110,168,255,.22), transparent); z-index: 0; }
+  .nvart::before { content: ""; position: absolute; inset: -18px; border-radius: 48px; background: radial-gradient(closest-side, rgba(10,132,255,.22), transparent); z-index: 0; }
   .nvart > * { position: relative; z-index: 1; }
   .nvart svg { width: 72px; height: 72px; opacity: .8; }
   .nvlabel { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6f7480; }
@@ -220,7 +223,7 @@
   .nvvol[hidden] { display: none; }
   .nvvol svg { width: 20px; height: 20px; flex: none; }
   .nvvol .bar { flex: 1; height: 6px; border-radius: 6px; background: rgba(255,255,255,.1); overflow: hidden; }
-  .nvvol .bar i { display: block; height: 100%; width: 0; background: var(--accent, #6ea8ff); border-radius: 6px; transition: width .25s; }
+  .nvvol .bar i { display: block; height: 100%; width: 0; background: var(--accent, #0a84ff); border-radius: 6px; transition: width .25s; }
   .nvvol.muted .bar i { background: #6f7480; }
   .nvvol b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; min-width: 2.2em; text-align: right; }
   .novideo p { color: #6f7480; font-size: 12px; margin-top: 14px; max-width: 360px; }
@@ -255,11 +258,11 @@
   dialog .actions { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
   dialog[hidden], dialog [hidden] { display: none !important; }
   main[hidden], #wall[hidden] { display: none !important; }
-  .btn.on { background: rgba(110,168,255,.16); border-color: rgba(110,168,255,.55); color: #fff; }
+  .btn.on { background: rgba(10,132,255,.16); border-color: rgba(10,132,255,.55); color: #fff; }
   #wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; align-items: start; }
   .wtile { text-align: left; color: inherit; font: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 0; overflow: hidden; cursor: pointer; transition: border-color .15s, transform .1s; }
-  .wtile:hover { border-color: rgba(110,168,255,.55); transform: translateY(-1px); }
-  .wtile.active { border-color: rgba(110,168,255,.75); }
+  .wtile:hover { border-color: rgba(10,132,255,.55); transform: translateY(-1px); }
+  .wtile.active { border-color: rgba(10,132,255,.75); }
   .wtile.standby .wpic { filter: grayscale(1) brightness(.55); }
   .wpic { position: relative; aspect-ratio: 16 / 9; background: #07080b; display: grid; place-items: center; }
   .wpic > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -278,7 +281,7 @@
   .chips[hidden], #btnShow[hidden], #powerRow[hidden] { display: none; }
   .chip { padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font-size: 12.5px; }
   .chip:hover { background: var(--panel-hi); }
-  .chip.on { background: rgba(110,168,255,.2); border-color: rgba(110,168,255,.6); color: #fff; }
+  .chip.on { background: rgba(10,132,255,.2); border-color: rgba(10,132,255,.6); color: #fff; }
   .chip.off { opacity: .5; }
   #btnShow { width: 100%; margin-bottom: 10px; }
   .wph { display: grid; justify-items: center; gap: 6px; }
@@ -337,7 +340,7 @@
   .pwrules { margin: 0; padding-left: 18px; color: var(--dim); font-size: 12px; line-height: 1.5; }
   .pwrules li.ok { color: var(--ok); }
   .who { display: flex; align-items: center; gap: 12px; padding: 4px 4px 10px; }
-  .who .av { width: 38px; height: 38px; border-radius: 50%; background: rgba(110,168,255,.2); display: grid; place-items: center; font-weight: 700; text-transform: uppercase; }
+  .who .av { width: 38px; height: 38px; border-radius: 50%; background: rgba(10,132,255,.2); display: grid; place-items: center; font-weight: 700; text-transform: uppercase; }
   .who small { display: block; color: var(--dim); font-size: 12px; }
   .ditem.danger { color: var(--bad); }
   #usersDlg, #pwDlg { width: min(560px, 94vw); }
@@ -369,6 +372,109 @@
   #scanList .note { grid-column: 1 / -1; color: #6f7480; font-size: 11.5px; line-height: 1.4; }
   #scanList .tag { font-size: 11px; color: var(--dim); }
   #scanBusy { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 12.5px; margin-bottom: 10px; }
+
+  /* ================= Apple-style pass: content over chrome =================
+     Flat grouped surfaces instead of outlined cards, one accent, system type, concentric radii,
+     borders only where they carry meaning (the dashed "add" tile). */
+  body { font: 15px/1.47 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif; letter-spacing: 0; }
+  .wrap { padding-top: 22px; }
+  .dot.ok, .dot.warn { box-shadow: none; }
+  .btn { border-radius: 10px; font-weight: 500; background: var(--panel); }
+  .btn:hover { background: var(--panel-hi); }
+  .btn.primary { background: var(--accent); color: #fff; font-weight: 600; }
+  .btn.primary:hover { background: #3395ff; }
+  .btn.on, .chip.on { background: rgba(10,132,255,.2); color: #fff; }
+  .btn.danger { background: transparent; }
+  .tvtab.active, .btn.on, .chip.on, .btn.primary { border-color: transparent; }
+  .pill { background: transparent; padding: 6px 4px; }
+  /* TV tabs: one segmented control */
+  header .tvs { background: var(--panel); border-radius: 12px; padding: 3px; gap: 2px; flex: 0 1 auto; max-width: 100%; }
+  .tvtab { background: transparent; border-radius: 9px; padding: 6px 12px; color: var(--dim); font-weight: 500; }
+  .tvtab:hover { background: rgba(255,255,255,.06); color: var(--text); }
+  .tvtab.active { background: #48484a; color: #fff; }
+  .tvtab .badge, .wmeta .badge { background: transparent; color: var(--faint); letter-spacing: 0; font-size: 11px; padding: 0; }
+  @media (max-width: 760px) { header .tvs { flex: 1 1 100%; } }
+  /* stage */
+  .stage { border: 0; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.55); }
+  .stage-wrap::before { opacity: .4; filter: blur(60px); }
+  .hud span, .icon-btn { border: 0; background: rgba(28,28,30,.7); backdrop-filter: blur(14px); }
+  .novideo { background: var(--panel); }
+  .nvlabel { text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--dim); }
+  .novideo h3.nvnow { font-weight: 600; letter-spacing: -.025em; }
+  .nvart::before { display: none; }
+  .nvvol .bar { background: #3a3a3c; }
+  /* apps */
+  .app { border: 0; border-radius: 14px; }
+  .app:hover { background: var(--panel); }
+  .app .ico { border-radius: 24%; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+  .app small { color: var(--dim); font-size: 12px; }
+  /* remote */
+  .remote { background: var(--panel); border: 0; border-radius: 28px; box-shadow: none; padding: 24px 20px 20px; }
+  .pad { background: var(--fill); border: 0; box-shadow: none; }
+  .pad button { color: #d1d1d6; }
+  .pad button:hover { background: rgba(255,255,255,.06); }
+  .pad .ok { background: #3a3a3c; border: 0; }
+  .key { background: var(--fill); border: 0; border-radius: 14px; color: #d1d1d6; }
+  .key:hover { background: #3a3a3c; }
+  .hints { border-top-color: var(--sep); color: var(--faint); }
+  kbd { background: var(--fill); border: 0; color: var(--dim); }
+  .toast { background: rgba(44,44,46,.92); backdrop-filter: blur(16px); border: 0; box-shadow: 0 8px 30px rgba(0,0,0,.4); }
+  /* wall */
+  .wtile { border: 0; border-radius: 20px; transition: box-shadow .15s, background .15s; }
+  .wtile:hover { transform: none; background: var(--panel-hi); }
+  .wtile.active { box-shadow: 0 0 0 2px var(--accent); }
+  .wpic { background: var(--panel); }
+  .wmeta { padding: 12px 14px; }
+  .wpw, .wset { background: var(--fill); border: 0; }
+  .wpw:hover, .wset:hover { background: #48484a; }
+  .walladd { border: 1.5px dashed rgba(255,255,255,.16); border-radius: 20px; }
+  .wallhint { color: var(--faint); }
+  /* fields and dialogs */
+  input[type=text], input[type=password], select { background: var(--fill); border: 0; border-radius: 10px; padding: 10px 12px; }
+  input[type=text]:focus-visible, input[type=password]:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
+  dialog { background: var(--panel); border: 0; border-radius: 20px; padding: 24px; box-shadow: 0 24px 80px rgba(0,0,0,.6); }
+  dialog::backdrop { background: rgba(0,0,0,.5); backdrop-filter: blur(14px); }
+  dialog h2 { font-size: 20px; font-weight: 650; letter-spacing: -.02em; margin-bottom: 16px; }
+  dialog #pairBox, #userList li, #tokList li, #scanList li { background: var(--fill); border: 0; border-radius: 12px; }
+  dialog .msg { color: var(--accent) !important; }
+  .chip { background: var(--fill); border: 0; }
+  /* drawer: a grouped list on frosted glass */
+  #drawer { background: rgba(28,28,30,.88); backdrop-filter: blur(30px) saturate(1.4); border-right: 0; border-radius: 0 20px 20px 0; }
+  .ditem { background: transparent; border: 0; border-radius: 12px; padding: 12px; }
+  .ditem:hover { background: var(--fill); }
+  .ditem > svg { color: var(--accent); }
+  .ditem.danger > svg { color: var(--bad); }
+  .dhead { font-weight: 600; font-size: 17px; }
+  .who .av { background: var(--accent); }
+  /* sign-in */
+  #auth { background: #000; }
+  .authcard { background: var(--panel); border: 0; border-radius: 20px; box-shadow: none; }
+
+  /* ---- details from the apple-design skill ---- */
+  /* tracking follows size: tight when large, a touch open when small */
+  small, .app small, .hints, .wallhint, .badge, kbd, .nvlabel, .key { letter-spacing: .006em; }
+  .brand, .wmeta .wname, .dhead { letter-spacing: -.012em; }
+  /* feedback on press, instantly */
+  .tvtab:active, .app:active, .chip:active, .ditem:active, .wpw:active, .wset:active { transform: scale(.97); transition-duration: 80ms; }
+  .wtile:active { transform: scale(.985); }
+  /* small targets get invisible hit padding */
+  .wpw, .wset { position: relative; }
+  .wpw::after, .wset::after { content: ""; position: absolute; inset: -7px; border-radius: 50%; }
+  /* text on frosted glass needs more contrast, not flat grey */
+  #drawer .ditem small, #drawer .who small { color: #aeaeb2; font-weight: 500; }
+  #drawer { touch-action: pan-y; }
+  @media (prefers-reduced-motion: reduce) {
+    #drawer { transform: none; transition: opacity .2s !important; }
+    #drawer:not(.open) { opacity: 0; }
+    #scrim { transition: opacity .2s !important; }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    #drawer, .toast, .hud span, .icon-btn { background: #1c1c1e; backdrop-filter: none; }
+    dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: none; }
+  }
+  @media (prefers-contrast: more) {
+    :root { --line: rgba(255,255,255,.55); --dim: #c7c7cc; --faint: #aeaeb2; }
+  }
 </style>
 </head>
 <body>
@@ -1580,6 +1686,41 @@ function setDrawer(on) {
   if (on) { sc.hidden = false; requestAnimationFrame(() => sc.classList.add("show")); $("btnMenuClose").focus(); }
   else { sc.classList.remove("show"); setTimeout(() => { if (!drawer.classList.contains("open")) sc.hidden = true; }, 200); $("btnMenu").focus(); }
 }
+
+// Swipe the menu closed. It follows the finger 1:1 (and rubber-bands if pulled the wrong way); on release the
+// finger's velocity, not only its position, decides whether it closes or springs back.
+(function () {
+  const sc = $("scrim"); let id = null, x0 = 0, drag = false, hist = [], w = 320;
+  const rubber = (o) => (o * w * .55) / (w + .55 * Math.abs(o));
+  drawer.addEventListener("pointerdown", (e) => {
+    if (!drawer.classList.contains("open") || e.button > 0 || e.target.closest("select,input")) return;
+    id = e.pointerId; x0 = e.clientX; drag = false; hist = [[e.timeStamp, 0]]; w = drawer.getBoundingClientRect().width || 320;
+  });
+  drawer.addEventListener("pointermove", (e) => {
+    if (e.pointerId !== id) return;
+    const d = e.clientX - x0;
+    if (!drag) {
+      if (Math.abs(d) < 10) return;
+      if (d > 0) { id = null; return; }                    // only a swipe toward its edge starts a drag
+      drag = true; drawer.setPointerCapture(id); drawer.style.transition = "none"; sc.style.transition = "none";
+    }
+    const x = d < 0 ? d : rubber(d);
+    drawer.style.transform = `translateX(${x}px)`; sc.style.opacity = String(Math.max(0, 1 + x / w));
+    hist.push([e.timeStamp, x]); if (hist.length > 6) hist.shift();
+  });
+  const end = (e) => {
+    if (e.pointerId !== id) return;
+    id = null;
+    if (!drag) return;
+    drag = false;
+    const [t0, xa] = hist[0], [t1, x1] = hist[hist.length - 1];
+    const v = t1 > t0 ? ((x1 - xa) / (t1 - t0)) * 1000 : 0;   // px/s, negative = toward the edge
+    const close = Math.abs(v) > 300 ? v < 0 : x1 < -w / 2;
+    drawer.style.transition = ""; sc.style.transition = ""; drawer.style.transform = ""; sc.style.opacity = "";
+    if (close) setDrawer(false);
+  };
+  drawer.addEventListener("pointerup", end); drawer.addEventListener("pointercancel", end);
+})();
 $("btnMenu").onclick = () => setDrawer(!drawer.classList.contains("open"));
 $("btnMenuClose").onclick = () => setDrawer(false);
 $("scrim").onclick = () => setDrawer(false);
