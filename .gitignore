@@ -3,3 +3,10 @@ __pycache__/
 .env
 *.pyc
 docs/ui-simulated-tv.png
+
+# herramientas de agentes (locales)
+.agents/
+.claude/
+.cortex/
+skills/
+skills-lock.json

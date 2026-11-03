@@ -703,7 +703,8 @@ class VidaaDriver(Driver):
 
     def _send(self, k):
         try:
-            self.client.send_key(k)
+            if not self.client.send_key(k):
+                log(f"vidaa {self.host}: key {k} not sent (MQTT not connected or publish failed)")
         except Exception as e:
             log("vidaa key:", e)
 

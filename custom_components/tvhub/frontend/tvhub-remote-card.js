@@ -2,6 +2,8 @@
    Usage:  type: custom:tvhub-remote
            entity: media_player.<your TV>
    Optional: name, show_power (default true), show_volume (default true), show_media (default true). */
+(() => {
+"use strict";
 const TEXT = {
   en: { back: "Back", home: "Home", menu: "Menu", rew: "Rewind", play: "Play", ff: "Forward", vd: "Vol \u2212", mute: "Mute", vu: "Vol +",
         up: "Up", down: "Down", left: "Left", right: "Right", ok: "OK", power: "Power", unavailable: "Unavailable", pick: "Choose a TVHub media player" },
@@ -50,9 +52,13 @@ ha-icon { --mdc-icon-size: 22px; pointer-events: none; }
 
 class TVHubRemoteCard extends HTMLElement {
   static getStubConfig(hass) {
-    const ids = Object.keys(hass?.states || {}).filter((e) => e.startsWith("media_player."));
-    const mine = ids.find((e) => hass.entities?.[e]?.platform === "tvhub");
-    return { entity: mine || ids[0] || "" };
+    try {
+      const ids = Object.keys(hass?.states || {}).filter((e) => e.startsWith("media_player."));
+      const mine = ids.find((e) => hass.entities?.[e]?.platform === "tvhub");
+      return { entity: mine || ids[0] || "" };
+    } catch (e) {
+      return { entity: "" };
+    }
   }
   static getConfigForm() {
     return { schema: [
@@ -65,7 +71,7 @@ class TVHubRemoteCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config || typeof config.entity !== "string" || !config.entity.startsWith("media_player.")) {
+    if (!config || typeof config.entity !== "string" || (config.entity && !config.entity.startsWith("media_player."))) {
       throw new Error("TVHub card: set 'entity' to one of your TVHub media_player entities");
     }
     this._config = { show_power: true, show_volume: true, show_media: true, ...config };
@@ -122,6 +128,12 @@ class TVHubRemoteCard extends HTMLElement {
   _update() {
     if (!this.shadowRoot || !this._config || !this._hass) return;
     const st = this._state(), t = this._t, card = this.shadowRoot.querySelector("ha-card");
+    if (!this._config.entity) {
+      card.classList.add("gone");
+      this.shadowRoot.querySelector(".title").textContent = "TVHub";
+      this.shadowRoot.querySelector(".sub").textContent = t.pick;
+      return;
+    }
     const gone = !st || st.state === "unavailable";
     card.classList.toggle("gone", gone);
     card.classList.toggle("off", !gone && st.state === "off");
@@ -145,6 +157,7 @@ class TVHubRemoteCard extends HTMLElement {
 if (!customElements.get("tvhub-remote")) customElements.define("tvhub-remote", TVHubRemoteCard);
 window.customCards = window.customCards || [];
 if (!window.customCards.some((c) => c.type === "tvhub-remote")) {
-  window.customCards.push({ type: "tvhub-remote", name: "TVHub Remote", preview: false,
+  window.customCards.push({ type: "tvhub-remote", name: "TVHub Remote", preview: true,
     description: "D-pad and keys for a TV managed by TVHub (Android TV / Fire TV, LG webOS, Hisense VIDAA)." });
 }
+})();

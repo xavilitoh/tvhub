@@ -28,7 +28,7 @@ Keep a list of TVs, switch between them with one click (or keys <kbd>1</kbd>–<
 - **HDMI inputs** — switch input from the remote on LG, Hisense and Android TV sets (tick *Es una Android TV* in Settings). For a Fire Stick, set the TV it's plugged into and its HDMI port, and **Mostrar en la TV** switches that TV to the stick.
 - **Per-TV power** — Encender / Apagar for the TV you're on, and a power button on every wall tile. TVs that stay reachable in standby (Roku, Sony, Samsung) are turned on over the network; for the rest TVHub sends Wake-on-LAN, which needs the TV's MAC saved in Settings.
 - **Reconnection** — a TV that drops off the network (or is unplugged) is retried automatically and comes back by itself; no restart needed.
-- **Network search** — one button finds LG, Hisense and Android / Fire TVs on your network and adds them.
+- **Network search** — from the wall, **Buscar en la red** finds TVs on your network and adds them (or **+ Añadir TV** if you know the IP). Each wall tile has a gear for that TV's settings; when you open a TV, the gear is in the top bar.
 - **TV list** — add, rename, edit and delete TVs from the UI; stored in `/data/tvs.json`.
 - **Live screen** (Android) — real H.264 video from the TV (`screenrecord`), decoded in the browser with WebCodecs. Not screenshots.
 - **Ambient glow** — the light around the picture follows the colour of what's on screen.
