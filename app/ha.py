@@ -356,7 +356,7 @@ class HABridge:
             put("select", "app", {"name": "Abrir app", "icon": "mdi:application-import",
                                   "command_topic": f"{p}/{i}/app", "state_topic": f"{p}/{i}/app_state",
                                   "options": opts or ["—"]})
-        if tv.type in ("vidaa", "webos"):
+        if tv.type in ("vidaa", "webos", "sony"):
             put("sensor", "volume", {"name": "Volumen", "state_topic": st, "icon": "mdi:volume-high",
                                      "state_class": "measurement",
                                      "value_template": "{{ value_json.volume if value_json.volume is not none else 'unknown' }}"})

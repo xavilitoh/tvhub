@@ -30,8 +30,8 @@ KINDS = {
     "android": ("Android TV / Fire TV", "android", 5555, "La primera vez la TV pregunta «¿Permitir depuración USB?»: acepta."),
     "androidtv-noadb": ("Android TV / Google TV (ADB apagado)", None, 0,
                         "Activa Opciones de desarrollador → Depuración ADB (o por red) y vuelve a buscar."),
-    "roku": ("Roku", None, 0, "Roku todavía no está soportado por TVHub."),
-    "samsung": ("Samsung", None, 0, "Samsung todavía no está soportado por TVHub."),
+    "roku": ("Roku", "roku", 8060, "Si no responde: Ajustes → Sistema → Configuración avanzada → Control por aplicaciones móviles → Permisivo."),
+    "samsung": ("Samsung Tizen", "samsung", 8002, "Después de añadirla: Ajustes → Emparejar y acepta el aviso en la TV."),
     "cast": ("Chromecast / Google Cast", None, 0, "Sin ADB no se puede controlar. Si es un Chromecast con Google TV, activa la depuración ADB."),
 }
 

@@ -39,11 +39,11 @@ OLD_CFG_PATH = os.path.join(DATA, "config.json")      # v0.1 single-TV config, m
 TOKEN = os.environ.get("TVHUB_TOKEN") or os.environ.get("TVDECK_TOKEN", "")      # TVDECK_TOKEN: name used before the rename
 
 KEY_RE = re.compile(r"^[A-Z0-9_]{2,40}$")
-PKG_RE = re.compile(r"^[A-Za-z0-9_.\-]{3,120}$")
+PKG_RE = re.compile(r"^[A-Za-z0-9_.\-]{1,120}$")
 HOST_RE = re.compile(r"^[A-Za-z0-9.\-]{1,100}$")
 MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$")
 VOLUME_KEYS = {"VOLUME_UP", "VOLUME_DOWN", "VOLUME_MUTE"}
-DEFAULT_PORTS = {"android": 5555, "vidaa": 36669, "webos": 3001}
+DEFAULT_PORTS = {"android": 5555, "vidaa": 36669, "webos": 3001, "roku": 8060, "samsung": 8002, "sony": 80}
 
 # Friendly names + brand colours for Android apps we know. Anything else is shown by package name.
 KNOWN_APPS = {
@@ -514,11 +514,25 @@ class AndroidDriver(Driver):
         return res
 
     async def launch(self, pkg):
+        """Start an app. `monkey` is flaky on Fire OS, so resolve the app's launcher activity and start it
+        explicitly (TV launcher first, then the phone one); monkey stays as the last resort."""
         if not PKG_RE.match(pkg):
             return
-        _, out = await self.sh(f"monkey -p {pkg} -c android.intent.category.LEANBACK_LAUNCHER 1")
-        if "No activities found" in out or "monkey aborted" in out:
-            await self.sh(f"monkey -p {pkg} -c android.intent.category.LAUNCHER 1")
+        last = ""
+        for cat in ("LEANBACK_LAUNCHER", "LAUNCHER"):
+            _, out = await self.sh(f"cmd package resolve-activity --brief -c android.intent.category.{cat} {pkg}")
+            comp = next((l.strip() for l in reversed(out.splitlines()) if re.match(r"^[\w.]+/[\w.$]+$", l.strip())), "")
+            if comp and comp.split("/")[0] == pkg:
+                _, o = await self.sh(f"am start -a android.intent.action.MAIN -c android.intent.category.{cat} -n {comp}")
+                last = o.strip()
+                if "Error" not in o and "Exception" not in o:
+                    return
+        for cat in ("LEANBACK_LAUNCHER", "LAUNCHER"):
+            _, o = await self.sh(f"monkey -p {pkg} -c android.intent.category.{cat} 1")
+            last = o.strip() or last
+            if "No activities found" not in o and "monkey aborted" not in o:
+                return
+        log(f"android {self.host}: could not launch {pkg}: {last[-200:]}")
 
     async def power(self, on):
         self.key("WAKEUP" if on else "SLEEP")
@@ -998,7 +1012,653 @@ class WebosDriver(Driver):
             self.pairing = False
 
 
-DRIVERS = {"android": AndroidDriver, "vidaa": VidaaDriver, "webos": WebosDriver}
+# --------------------------------------------------------------------------- Roku / Samsung / Sony (plain HTTP / WebSocket, no extra libraries)
+
+class AuthNeeded(Exception):
+    """The TV wants a credential (pairing token / pre-shared key) that we do not have yet."""
+
+
+def _secret_path(name):
+    return Path(DATA) / f"{name}.json"
+
+
+def secret_get(name, tid):
+    return (sec._read_json(_secret_path(name), {}) or {}).get(tid)
+
+
+def secret_set(name, tid, value):
+    d = sec._read_json(_secret_path(name), {}) or {}
+    if value is None:
+        d.pop(tid, None)
+    else:
+        d[tid] = value
+    sec._write_json(_secret_path(name), d)
+
+
+def _unesc(s):
+    import html
+    return html.unescape(s or "").strip()
+
+
+class NetDriver(Driver):
+    """Base for TVs controlled over HTTP: one poll loop (state, reconnection) and one ordered command queue."""
+    caps = {"video": False, "apps": True, "text": False, "snapshot": False, "pair": False}
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self.q = None
+        self.http = None
+        self.on = None                 # True / False when the TV reports its power state, None when unknown
+        self.app_name = ""
+        self.app_focus = ""
+        self.volume = None
+        self.muted = False
+        self.pair_msg = ""
+        self._apps = []
+
+    def extra(self):
+        return {"on": self.on, "app": self.app_name, "focus": self.app_focus, "volume": self.volume,
+                "muted": self.muted, "pair_msg": self.pair_msg}
+
+    async def start(self):
+        import aiohttp
+        self.q = asyncio.Queue()
+        self.http = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=6),
+                                          connector=aiohttp.TCPConnector(ssl=False))
+        self.tasks = [asyncio.create_task(self.run()), asyncio.create_task(self.worker())]
+
+    async def stop(self):
+        await super().stop()
+        h, self.http = self.http, None
+        if h:
+            await h.close()
+
+    async def poll(self):
+        raise NotImplementedError
+
+    async def run(self):
+        fails = 0
+        while True:
+            try:
+                await self.poll()
+                self.state = "device"
+                fails = 0
+            except asyncio.CancelledError:
+                raise
+            except AuthNeeded:
+                self.state, self.on = "needs_pairing", None
+            except Exception as e:                          # noqa: BLE001 — any network error means "not reachable now"
+                fails += 1
+                self.state, self.on, self.app_name, self.app_focus = "disconnected", None, "", ""
+                if fails in (1, 5) or fails % 30 == 0:
+                    log(f"{self.type} {self.host}: {type(e).__name__}: {e}")
+            await self.publish()
+            await asyncio.sleep(3 if self.state == "device" else min(6 + fails, 20) if self.state == "disconnected" else 5)
+
+    def key(self, name):
+        if self.q is not None and self.state == "device":
+            self.q.put_nowait(("key", name))
+
+    def text(self, s):
+        if self.q is not None and self.state == "device" and s:
+            self.q.put_nowait(("text", s))
+
+    async def worker(self):
+        while True:
+            kind, arg = await self.q.get()
+            try:
+                await (self.do_text(arg) if kind == "text" else self.do_key(arg))
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:                          # noqa: BLE001
+                log(f"{self.type} {kind} {arg!r}: {type(e).__name__}: {e}")
+
+    async def do_key(self, name):
+        raise NotImplementedError
+
+    async def do_text(self, s):
+        pass
+
+    def _num_key(self, name):
+        return name[-1] if name.startswith("NUMPAD_") and name[-1:].isdigit() else None
+
+    async def power(self, on):
+        mac = self.cfg.get("mac")
+        if on and mac:
+            await asyncio.get_running_loop().run_in_executor(None, wake_on_lan, mac)
+        if on and self.state == "device":
+            await self.power_on_net()
+        elif not on and self.state == "device":
+            await self.power_off_net()
+
+    async def power_on_net(self):
+        pass
+
+    async def power_off_net(self):
+        pass
+
+
+# ---- Roku: External Control Protocol (HTTP :8060, no pairing)
+
+ROKU_KEYS = {"DPAD_UP": "Up", "DPAD_DOWN": "Down", "DPAD_LEFT": "Left", "DPAD_RIGHT": "Right", "DPAD_CENTER": "Select",
+             "ENTER": "Select", "BACK": "Back", "HOME": "Home", "MENU": "Info", "MEDIA_PLAY_PAUSE": "Play",
+             "MEDIA_PLAY": "Play", "MEDIA_PAUSE": "Play", "MEDIA_REWIND": "Rev", "MEDIA_FAST_FORWARD": "Fwd",
+             "VOLUME_UP": "VolumeUp", "VOLUME_DOWN": "VolumeDown", "VOLUME_MUTE": "VolumeMute",
+             "CHANNEL_UP": "ChannelUp", "CHANNEL_DOWN": "ChannelDown", "DEL": "Backspace", "POWER": "Power"}
+ROKU_COLORS = {"12": "#e50914", "837": "#ff0033", "13": "#00a8e1", "291097": "#113ccf", "61322": "#5b2bd4",
+               "22297": "#1db954", "551012": "#1d1d1f", "13535": "#e5a00d"}
+
+
+class RokuDriver(NetDriver):
+    type = "roku"
+    caps = {"video": False, "apps": True, "text": True, "snapshot": False, "pair": False}
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self.is_tv = False
+        self._inputs = []
+
+    @property
+    def base(self):
+        return f"http://{self.host}:{self.port}"
+
+    async def _get(self, path):
+        async with self.http.get(self.base + path) as r:
+            if r.status == 403:
+                raise ConnectionError("403: en la Roku activa Ajustes → Sistema → Configuración avanzada → Control por aplicaciones móviles → Permisivo")
+            if r.status != 200:
+                raise ConnectionError(f"HTTP {r.status}")
+            return await r.read()
+
+    async def _post(self, path):
+        async with self.http.post(self.base + path) as r:
+            if r.status >= 400:
+                raise ConnectionError(f"HTTP {r.status}")
+
+    async def poll(self):
+        info = (await self._get("/query/device-info")).decode("utf-8", "replace")
+        tag = lambda t: _unesc((re.search(rf"<{t}>([^<]{{0,80}})</{t}>", info) or [None, ""])[1])
+        self.model = tag("model-name") or "Roku"
+        self.is_tv = tag("is-tv") == "true"
+        mode = tag("power-mode")
+        self.on = (mode == "PowerOn") if mode else None
+        if not self._apps and self.on is not False:
+            await self._load_apps()
+        self.app_name = self.app_focus = ""
+        if self.on is not False:
+            act = (await self._get("/query/active-app")).decode("utf-8", "replace")
+            m = re.search(r'<app\b([^>]*)>([^<]*)</app>', act)
+            if m:
+                idm = re.search(r'id="([^"]+)"', m.group(1))
+                self.app_name, self.app_focus = _unesc(m.group(2)), idm.group(1) if idm else ""
+                nm = next((i["name"] for i in self._inputs if i["pkg"] == self.app_focus), "")
+                if nm:                                      # an HDMI input in front: show "HDMI 2", not "tvinput.hdmi2"
+                    self.app_name = nm
+
+    async def _load_apps(self):
+        xml = (await self._get("/query/apps")).decode("utf-8", "replace")
+        apps, ins = [], []
+        for attrs, name in re.findall(r"<app\b([^>]*)>([^<]*)</app>", xml):
+            i = re.search(r'id="([^"]+)"', attrs)
+            t = re.search(r'type="([^"]+)"', attrs)
+            if not i or not re.match(r"^[A-Za-z0-9_.\-]{1,120}$", i.group(1)):
+                continue
+            rec = {"pkg": i.group(1), "name": _unesc(name) or i.group(1)}
+            (ins if (t and t.group(1) == "tvin") or i.group(1).startswith("tvinput.") else apps).append(rec)
+        self._apps, self._inputs = apps, ins
+
+    async def do_key(self, name):
+        k = ROKU_KEYS.get(name) or (("Lit_" + self._num_key(name)) if self._num_key(name) else None)
+        if k:
+            await self._post(f"/keypress/{k}")
+
+    async def do_text(self, s):
+        from urllib.parse import quote
+        for ch in s[:200]:
+            await self._post("/keypress/Lit_" + quote(ch, safe=""))
+
+    async def power_on_net(self):
+        await self._post("/keypress/PowerOn")
+
+    async def power_off_net(self):
+        await self._post("/keypress/PowerOff")
+
+    async def apps(self):
+        if self.state != "device":
+            return []
+        res = [{"pkg": a["pkg"], "name": a["name"], "color": ROKU_COLORS.get(a["pkg"], "#3a3f4b"), "known": a["pkg"] in ROKU_COLORS}
+               for a in self._apps]
+        res.sort(key=lambda x: (not x["known"], x["name"].lower()))
+        return res
+
+    async def launch(self, pkg):
+        if self.state == "device" and re.match(r"^[A-Za-z0-9_.\-]{1,120}$", pkg):
+            try:
+                await self._post(f"/launch/{pkg}")
+            except Exception as e:                          # noqa: BLE001
+                log(f"roku launch {pkg}: {e}")
+
+    def has_inputs(self):
+        return bool(self._inputs)
+
+    async def inputs(self):
+        return [{"id": i["pkg"], "name": i["name"], "connected": True} for i in self._inputs] if self.state == "device" else []
+
+    async def set_input(self, iid):
+        if self.state != "device":
+            raise RuntimeError("La TV no está conectada")
+        if iid not in {i["pkg"] for i in self._inputs}:
+            raise ValueError("Entrada no válida")
+        await self._post(f"/launch/{iid}")
+
+    def hdmi_id(self, n):
+        return f"tvinput.hdmi{int(n)}"
+
+    async def app_icon(self, pkg):
+        if self.state != "device" or not re.match(r"^[A-Za-z0-9_.\-]{1,120}$", pkg) or pkg.startswith("tvinput."):
+            return None
+        try:
+            async with self.http.get(f"{self.base}/query/icon/{pkg}") as r:
+                ct = r.headers.get("Content-Type", "")
+                if r.status == 200 and ct.startswith("image/"):
+                    return await r.read(), ct.split(";")[0]
+        except Exception:                                   # noqa: BLE001
+            pass
+        return None
+
+
+# ---- Samsung Tizen: WebSocket remote channel (wss :8002, one-time token approved on the TV)
+
+SAMSUNG_KEYS = {"DPAD_UP": "KEY_UP", "DPAD_DOWN": "KEY_DOWN", "DPAD_LEFT": "KEY_LEFT", "DPAD_RIGHT": "KEY_RIGHT",
+                "DPAD_CENTER": "KEY_ENTER", "ENTER": "KEY_ENTER", "BACK": "KEY_RETURN", "HOME": "KEY_HOME", "MENU": "KEY_MENU",
+                "VOLUME_UP": "KEY_VOLUP", "VOLUME_DOWN": "KEY_VOLDOWN", "VOLUME_MUTE": "KEY_MUTE",
+                "CHANNEL_UP": "KEY_CHUP", "CHANNEL_DOWN": "KEY_CHDOWN", "MEDIA_PLAY": "KEY_PLAY", "MEDIA_PAUSE": "KEY_PAUSE",
+                "MEDIA_STOP": "KEY_STOP", "MEDIA_REWIND": "KEY_REWIND", "MEDIA_FAST_FORWARD": "KEY_FF", "POWER": "KEY_POWER"}
+SAMSUNG_APPS = [("11101200001", "Netflix", "#e50914"), ("111299001912", "YouTube", "#ff0033"),
+                ("3201512006785", "Prime Video", "#00a8e1"), ("3201901017640", "Disney+", "#113ccf"),
+                ("3201606009684", "Spotify", "#1db954")]
+
+
+class SamsungDriver(NetDriver):
+    type = "samsung"
+    caps = {"video": False, "apps": True, "text": False, "snapshot": False, "pair": True}
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self.ws = None
+        self.reader = None
+        self.ready = None
+        self.playing = False
+        self._installed = None
+
+    async def stop(self):
+        await self._close_ws()
+        await super().stop()
+
+    async def _close_ws(self):
+        r, self.reader = self.reader, None
+        w, self.ws = self.ws, None
+        if r:
+            r.cancel()
+        if w is not None and not w.closed:
+            try:
+                await w.close()
+            except Exception:                               # noqa: BLE001
+                pass
+
+    async def poll(self):
+        async with self.http.get(f"http://{self.host}:8001/api/v2/") as r:
+            if r.status != 200:
+                raise ConnectionError(f"HTTP {r.status}")
+            j = await r.json(content_type=None)
+        dev = (j or {}).get("device") or {}
+        self.model = str(dev.get("modelName") or "Samsung")[:40]
+        ps = str(dev.get("PowerState") or "").lower()
+        self.on = (ps == "on") if ps else None
+        if not secret_get("samsung-tokens", self.id):
+            raise AuthNeeded()
+        if self.ws is not None and self.ws.closed:
+            await self._close_ws()
+
+    def _url(self, token):
+        import base64
+        from urllib.parse import quote
+        name = base64.b64encode(b"TVHub").decode()
+        return f"wss://{self.host}:8002/api/v2/channels/samsung.remote.control?name={quote(name)}" + (f"&token={quote(token)}" if token else "")
+
+    async def _read(self, ws, ready, token_box):
+        async for m in ws:
+            if m.type != WSMsgType.TEXT:
+                continue
+            try:
+                d = json.loads(m.data)
+            except ValueError:
+                continue
+            ev = d.get("event")
+            if ev == "ms.channel.connect":
+                tok = (d.get("data") or {}).get("token")
+                if tok:
+                    token_box.append(str(tok))
+                if not ready.done():
+                    ready.set_result(True)
+            elif ev == "ed.installedApp.get":
+                lst = ((d.get("data") or {}).get("data")) or []
+                self._installed = [{"pkg": str(a.get("appId")), "name": str(a.get("name") or a.get("appId"))} for a in lst if a.get("appId")]
+            elif ev in ("ms.channel.timeOut", "ms.error") and not ready.done():
+                ready.set_exception(ConnectionError(str(ev)))
+
+    async def _ensure_ws(self, timeout=8):
+        if self.ws is not None and not self.ws.closed:
+            return self.ws
+        await self._close_ws()
+        token = secret_get("samsung-tokens", self.id)
+        if not token:
+            raise AuthNeeded()
+        ready = asyncio.get_running_loop().create_future()
+        box = []
+        ws = await self.http.ws_connect(self._url(token), heartbeat=20)
+        self.ws = ws
+        self.reader = asyncio.create_task(self._read(ws, ready, box))
+        await asyncio.wait_for(ready, timeout)
+        if box and box[0] != token:
+            secret_set("samsung-tokens", self.id, box[0])
+        return ws
+
+    async def _send(self, payload):
+        ws = await self._ensure_ws()
+        await ws.send_json(payload)
+
+    async def do_key(self, name):
+        if name == "MEDIA_PLAY_PAUSE":
+            self.playing = not self.playing
+            k = "KEY_PLAY" if self.playing else "KEY_PAUSE"
+        else:
+            k = SAMSUNG_KEYS.get(name) or (("KEY_" + self._num_key(name)) if self._num_key(name) else None)
+        if k:
+            await self._send({"method": "ms.remote.control", "params": {"Cmd": "Click", "DataOfCmd": k, "Option": "false", "TypeOfRemote": "SendRemoteKey"}})
+
+    async def power_on_net(self):
+        await self.do_key("POWER")
+
+    async def power_off_net(self):
+        await self.do_key("POWER")
+
+    async def power(self, on):
+        mac = self.cfg.get("mac")
+        if on and mac:
+            await asyncio.get_running_loop().run_in_executor(None, wake_on_lan, mac)
+        if on and self.state == "device" and self.on is False and not mac:
+            await self.do_key("POWER")
+        elif not on and self.state == "device" and self.on is not False:
+            await self.do_key("POWER")
+
+    async def apps(self):
+        if self.state != "device":
+            return []
+        try:
+            await self._send({"method": "ms.channel.emit", "params": {"event": "ed.installedApp.get", "to": "host"}})
+            for _ in range(10):
+                if self._installed is not None:
+                    break
+                await asyncio.sleep(0.2)
+        except Exception as e:                              # noqa: BLE001
+            log(f"samsung apps {self.host}: {type(e).__name__}: {e}")
+        colors = {a[0]: a[2] for a in SAMSUNG_APPS}
+        src = self._installed or [{"pkg": a[0], "name": a[1]} for a in SAMSUNG_APPS]
+        res = [{"pkg": a["pkg"], "name": a["name"], "color": colors.get(a["pkg"], "#3a3f4b"), "known": a["pkg"] in colors} for a in src
+               if PKG_RE.match(a["pkg"])]
+        res.sort(key=lambda x: (not x["known"], x["name"].lower()))
+        return res
+
+    async def launch(self, pkg):
+        if self.state != "device" or not PKG_RE.match(pkg):
+            return
+        try:
+            async with self.http.post(f"http://{self.host}:8001/api/v2/applications/{pkg}") as r:
+                if r.status == 200:
+                    return
+            await self._send({"method": "ms.channel.emit", "params": {"event": "ed.apps.launch", "to": "host",
+                              "data": {"action_type": "DEEP_LINK", "appId": pkg}}})
+        except Exception as e:                              # noqa: BLE001
+            log(f"samsung launch {pkg}: {e}")
+
+    async def pair(self, pin=None):
+        if self.pair_msg:
+            return False, "Ya hay un emparejamiento en curso: acepta el aviso en la TV."
+        self.pair_msg = "Acepta el aviso que aparece en la TV (tienes 30 s)…"
+        await self.publish(force=True)
+        ready = asyncio.get_running_loop().create_future()
+        box = []
+        ws = None
+        try:
+            await self._close_ws()
+            ws = await self.http.ws_connect(self._url(""), heartbeat=20)
+            t = asyncio.create_task(self._read(ws, ready, box))
+            try:
+                await asyncio.wait_for(ready, 30)
+            finally:
+                t.cancel()
+            if not box:
+                raise ConnectionError("TV did not return a token")
+            secret_set("samsung-tokens", self.id, box[0])
+            self.state = "device"
+            return True, "Emparejada."
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:                              # noqa: BLE001
+            log(f"samsung pair {self.host}: {type(e).__name__}: {e}")
+            return False, ("No se aceptó el aviso a tiempo o no llegó a la TV. Enciéndela, activa en ella "
+                           "Ajustes → General → Administrador de dispositivos externos → «Notificación de acceso» y vuelve a intentarlo.")
+        finally:
+            if ws is not None and not ws.closed:
+                await ws.close()
+            self.pair_msg = ""
+            await self.publish(force=True)
+
+
+# ---- Sony Bravia: REST (JSON-RPC) + IRCC remote codes, authenticated with a pre-shared key set on the TV
+
+SONY_KEYS = {"DPAD_UP": "Up", "DPAD_DOWN": "Down", "DPAD_LEFT": "Left", "DPAD_RIGHT": "Right", "DPAD_CENTER": "Confirm",
+             "ENTER": "Confirm", "BACK": "Return", "HOME": "Home", "MENU": "Options", "VOLUME_UP": "VolumeUp",
+             "VOLUME_DOWN": "VolumeDown", "VOLUME_MUTE": "Mute", "CHANNEL_UP": "ChannelUp", "CHANNEL_DOWN": "ChannelDown",
+             "MEDIA_PLAY": "Play", "MEDIA_PAUSE": "Pause", "MEDIA_STOP": "Stop", "MEDIA_REWIND": "Rewind",
+             "MEDIA_FAST_FORWARD": "Forward"}
+
+
+class SonyDriver(NetDriver):
+    type = "sony"
+    caps = {"video": False, "apps": True, "text": True, "snapshot": False, "pair": True, "volume_set": True}
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self._codes = {}
+        self._app_uri = {}           # short id -> uri (the UI never gets to name an arbitrary uri)
+        self._app_name = {}
+        self._app_icon_url = {}
+        self._inp = []
+        self.playing = False
+
+    @property
+    def base(self):
+        return f"http://{self.host}:{self.port}"
+
+    @staticmethod
+    def _lst(res):
+        """Sony wraps list results one level deep: {"result": [[{...}, {...}]]}."""
+        return res[0] if res and isinstance(res[0], list) else res
+
+    async def _rpc(self, service, method, params=None, version="1.0"):
+        psk = secret_get("sony-psk", self.id)
+        if not psk:
+            raise AuthNeeded()
+        body = {"method": method, "id": 1, "params": params if params is not None else [], "version": version}
+        async with self.http.post(f"{self.base}/sony/{service}", json=body, headers={"X-Auth-PSK": psk}) as r:
+            if r.status in (401, 403):
+                raise AuthNeeded()
+            if r.status != 200:
+                raise ConnectionError(f"HTTP {r.status}")
+            j = await r.json(content_type=None)
+        if "error" in j:
+            raise RuntimeError(f"{method}: {j['error']}")
+        return j.get("result") or []
+
+    async def poll(self):
+        st = (await self._rpc("system", "getPowerStatus"))
+        self.on = bool(st and st[0].get("status") == "active")
+        if not self.model:
+            info = await self._rpc("system", "getSystemInformation")
+            self.model = str((info[0] if info else {}).get("model") or "Sony Bravia")[:40]
+        if not self._codes:
+            r = await self._rpc("system", "getRemoteControllerInfo")
+            lst = r[1] if len(r) > 1 and isinstance(r[1], list) else []
+            self._codes = {c["name"]: c["value"] for c in lst if isinstance(c, dict) and "name" in c and "value" in c}
+        self.volume, self.muted, self.app_name, self.app_focus = None, False, "", ""
+        if not self.on:
+            return
+        try:
+            for v in self._lst(await self._rpc("audio", "getVolumeInformation")):
+                if v.get("target") == "speaker":
+                    self.volume, self.muted = int(v.get("volume", 0)), bool(v.get("mute"))
+        except RuntimeError:
+            pass
+        if not self._app_uri:
+            await self._load_apps()
+        try:
+            pc = await self._rpc("avContent", "getPlayingContentInfo")
+            uri = (pc[0] if pc else {}).get("uri", "")
+            self.app_focus = uri
+            title = (pc[0] if pc else {}).get("title") or ""
+            hit = next((a for a, u in self._app_uri.items() if u and uri and u.split("?")[0] == uri.split("?")[0]), "")
+            self.app_name = self._app_name.get(hit, "") if hit else str(title)[:40]
+        except RuntimeError:                                # error 7 = "illegal state": an app is in front, not a source
+            pass
+
+    async def _load_apps(self):
+        import hashlib
+        res = await self._rpc("appControl", "getApplicationList")
+        for a in (res[0] if res and isinstance(res[0], list) else []):
+            uri = a.get("uri") or ""
+            if not uri:
+                continue
+            k = "app" + hashlib.sha1(uri.encode()).hexdigest()[:12]
+            self._app_uri[k] = uri
+            self._app_name[k] = str(a.get("title") or k)[:40]
+            self._app_icon_url[k] = a.get("icon") or ""
+
+    async def _ircc(self, name):
+        code = self._codes.get(name)
+        if not code:
+            return
+        body = ('<?xml version="1.0"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" '
+                's:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>'
+                '<u:X_SendIRCC xmlns:u="urn:schemas-sony-com:service:IRCC:1"><IRCCCode>' + code +
+                '</IRCCCode></u:X_SendIRCC></s:Body></s:Envelope>')
+        h = {"X-Auth-PSK": secret_get("sony-psk", self.id) or "", "Content-Type": "text/xml; charset=UTF-8",
+             "SOAPACTION": '"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC"'}
+        async with self.http.post(f"{self.base}/sony/IRCC", data=body.encode(), headers=h) as r:
+            if r.status >= 400:
+                raise ConnectionError(f"IRCC HTTP {r.status}")
+
+    async def do_key(self, name):
+        if name == "MEDIA_PLAY_PAUSE":
+            self.playing = not self.playing
+            n = "Play" if self.playing else "Pause"
+        elif name == "DEL":
+            n = "Return"
+        elif name == "POWER":
+            n = "PowerOff" if self.on else "WakeUp"
+        else:
+            n = SONY_KEYS.get(name) or (("Num" + self._num_key(name)) if self._num_key(name) else None)
+        if n:
+            await self._ircc(n)
+
+    async def do_text(self, s):
+        await self._rpc("appControl", "setTextForm", [s[:200]])
+
+    async def power_on_net(self):
+        await self._rpc("system", "setPowerStatus", [{"status": True}], "1.1")
+
+    async def power_off_net(self):
+        await self._rpc("system", "setPowerStatus", [{"status": False}], "1.1")
+
+    async def set_volume(self, level):
+        if self.state == "device":
+            await self._rpc("audio", "setAudioVolume", [{"volume": str(max(0, min(100, int(level)))), "target": "speaker"}], "1.2")
+
+    async def apps(self):
+        if self.state != "device":
+            return []
+        if not self._app_uri and self.on:
+            try:
+                await self._load_apps()
+            except Exception as e:                          # noqa: BLE001
+                log(f"sony apps {self.host}: {e}")
+        colors = {"netflix": "#e50914", "youtube": "#ff0033", "prime": "#00a8e1", "disney": "#113ccf"}
+        res = []
+        for k, uri in self._app_uri.items():
+            n = self._app_name.get(k, k)
+            col = next((c for w, c in colors.items() if w in n.lower()), "#3a3f4b")
+            res.append({"pkg": k, "name": n, "color": col, "known": col != "#3a3f4b"})
+        res.sort(key=lambda x: (not x["known"], x["name"].lower()))
+        return res
+
+    async def launch(self, pkg):
+        uri = self._app_uri.get(pkg)
+        if uri and self.state == "device":
+            try:
+                await self._rpc("appControl", "setActiveApp", [{"uri": uri}])
+            except Exception as e:                          # noqa: BLE001
+                log(f"sony launch {pkg}: {e}")
+
+    def has_inputs(self):
+        return True
+
+    async def inputs(self):
+        if self.state != "device" or not self.on:
+            return []
+        res = self._lst(await self._rpc("avContent", "getCurrentExternalInputsStatus", [], "1.1"))
+        self._inp = [{"id": x["uri"], "name": str(x.get("label") or x.get("title") or x["uri"])[:30], "connected": bool(x.get("connection", True))}
+                     for x in res if isinstance(x, dict) and x.get("uri")]
+        return self._inp
+
+    async def set_input(self, iid):
+        if self.state != "device":
+            raise RuntimeError("La TV no está conectada")
+        if not self._inp:
+            await self.inputs()
+        if iid not in {i["id"] for i in self._inp}:
+            raise ValueError("Entrada no válida")
+        await self._rpc("avContent", "setPlayContent", [{"uri": iid}])
+
+    def hdmi_id(self, n):
+        return f"extInput:hdmi?port={int(n)}"
+
+    async def app_icon(self, pkg):
+        url = self._app_icon_url.get(pkg)
+        return await icons.fetch_remote(url, self.host) if url else None
+
+    async def pair(self, psk=None):
+        psk = (psk or "").strip()
+        if not re.match(r"^[\x21-\x7e]{1,40}$", psk):
+            return False, "Escribe la clave precompartida (PSK) que pusiste en la TV (1-40 caracteres, sin espacios)."
+        old = secret_get("sony-psk", self.id)
+        secret_set("sony-psk", self.id, psk)
+        try:
+            r = await self._rpc("system", "getPowerStatus")
+        except AuthNeeded:
+            secret_set("sony-psk", self.id, old)
+            return False, "La TV rechazó la clave. Revisa Ajustes → Red → Configuración de red doméstica → Control IP → Clave precompartida."
+        except Exception as e:                              # noqa: BLE001
+            secret_set("sony-psk", self.id, old)
+            return False, f"No se pudo contactar con la TV: {e}. ¿Está «Control IP» y «Control remoto simple IP» activados?"
+        self._codes, self._app_uri = {}, {}
+        self.model = ""
+        await self.publish(force=True)
+        return True, "Clave guardada."
+
+
+DRIVERS = {"android": AndroidDriver, "vidaa": VidaaDriver, "webos": WebosDriver, "roku": RokuDriver,
+           "samsung": SamsungDriver, "sony": SonyDriver}
 
 
 # --------------------------------------------------------------------------- registry
@@ -1503,6 +2163,8 @@ async def api_pair(request):
         return web.json_response({"error": "Esta TV no necesita emparejamiento"}, status=400)
     d = await request.json() if request.can_read_body else {}
     pin = re.sub(r"\D", "", str(d.get("pin", "")))[:8] or None
+    if tv.type == "sony":                       # a pre-shared key, not a numeric PIN
+        pin = str(d.get("pin", ""))[:40]
     ok, msg = await tv.pair(pin)
     return web.json_response({"ok": ok, "message": msg})
 
@@ -1558,14 +2220,18 @@ async def power_one(tv, on):
             return "fail", "ADB no responde (¿en reposo profundo o sin red?)"
         await tv.power(on)
         return "ok", ""
+    is_on = tv.state == "device" and tv.extra().get("on") is not False       # None (unknown) counts as on
     if on:
-        if tv.state == "device":
+        if is_on:
             return "skipped", "ya estaba encendida"
+        if tv.state == "device":                  # reachable but in standby (Roku, Sony, Samsung…): ask it directly
+            await tv.power(True)
+            return "ok", "orden de encendido enviada"
         if not mac:
             return "fail", "no se puede encender sin su MAC (Wake-on-LAN); añádela en Ajustes"
         await asyncio.get_running_loop().run_in_executor(None, wake_on_lan, mac)
         return "ok", "Wake-on-LAN enviado; tarda unos segundos"
-    if tv.state != "device":
+    if not is_on:
         return "skipped", "ya estaba apagada o sin conexión"
     await tv.power(False)
     return "ok", ""

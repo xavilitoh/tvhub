@@ -35,6 +35,12 @@
   .wrap { max-width: 1320px; margin: 0 auto; padding: 18px 20px 28px; }
 
   header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+  header .hl, header .hr { display: flex; align-items: center; gap: 10px; flex: none; }
+  header .hr { margin-left: auto; order: 3; }
+  header .tvs { order: 2; flex: 1 1 0; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; padding: 2px; }
+  header .tvs .tvtab { flex: none; }
+  @media (max-width: 760px) { header .tvs { order: 4; flex: 1 1 100%; } }
+  a.btn { text-decoration: none; color: inherit; }
   header .btn { padding: 8px 11px; }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 17px; letter-spacing: -.01em; }
   .brand svg { width: 26px; height: 26px; }
@@ -254,6 +260,7 @@
   .wtile { text-align: left; color: inherit; font: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 0; overflow: hidden; cursor: pointer; transition: border-color .15s, transform .1s; }
   .wtile:hover { border-color: rgba(110,168,255,.55); transform: translateY(-1px); }
   .wtile.active { border-color: rgba(110,168,255,.75); }
+  .wtile.standby .wpic { filter: grayscale(1) brightness(.55); }
   .wpic { position: relative; aspect-ratio: 16 / 9; background: #07080b; display: grid; place-items: center; }
   .wpic > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .wph { position: relative; text-align: center; color: var(--dim); font-size: 12.5px; padding: 10px; }
@@ -282,15 +289,18 @@
   .wph .wvol { font-size: 13px !important; font-weight: 500 !important; color: var(--dim) !important; }
   .wph .wvol:empty { display: none; }
   .wlogo[hidden] { display: none; }
-  .wpw { margin-left: 4px; flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--text); cursor: pointer; }
-  .wpw:hover { background: rgba(255,255,255,.16); }
-  .wpw svg { width: 15px; height: 15px; }
-  #btnMenu { margin-left: 2px; }
+  .wpw, .wset { margin-left: 4px; flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--text); cursor: pointer; }
+  .wpw:hover, .wset:hover { background: rgba(255,255,255,.16); }
+  .walladd { border: 1.5px dashed var(--line); border-radius: 18px; display: grid; place-content: center; justify-items: center; gap: 10px; padding: 24px 16px; min-height: 180px; color: var(--dim); text-align: center; }
+  .walladd b { color: var(--text); font-weight: 600; }
+  .walladd .btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .walladd[hidden] { display: none; }
+  .wpw svg, .wset svg { width: 15px; height: 15px; }
   #scrim { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 40; opacity: 0; transition: opacity .2s; }
   #scrim.show { opacity: 1; }
   #scrim[hidden] { display: none; }
-  #drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 88vw); z-index: 41; background: #11131a; border-left: 1px solid var(--line);
-    box-shadow: -20px 0 50px rgba(0,0,0,.5); padding: 14px; display: flex; flex-direction: column; gap: 8px; transform: translateX(105%); transition: transform .22s ease; visibility: hidden; }
+  #drawer { position: fixed; top: 0; left: 0; bottom: 0; width: min(320px, 88vw); z-index: 41; background: #11131a; border-right: 1px solid var(--line);
+    box-shadow: 20px 0 50px rgba(0,0,0,.5); padding: 14px; display: flex; flex-direction: column; gap: 8px; transform: translateX(-105%); transition: transform .22s ease; visibility: hidden; }
   #drawer.open { transform: none; visibility: visible; }
   .dhead { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 10px; font-size: 15px; }
   .ditem { display: flex; align-items: center; gap: 14px; text-align: left; width: 100%; padding: 13px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font: inherit; cursor: pointer; }
@@ -389,27 +399,25 @@
 </div>
 <div class="wrap" hidden>
   <header>
-    <div class="brand" id="brand" role="button" tabindex="0" title="Pared de TVs">
-      <svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="4" y="6" width="24" height="16" rx="4"/><path d="M11 27h10"/></svg>
-      TVHub
+    <div class="hl">
+      <button class="btn icon" id="btnMenu" title="Menú" aria-label="Menú" aria-haspopup="dialog" aria-expanded="false" aria-controls="drawer"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <a class="btn icon" id="btnGit" href="https://github.com/xavilitoh/tvhub" target="_blank" rel="noopener noreferrer" title="TVHub en GitHub" aria-label="TVHub en GitHub"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+      <div class="brand" id="brand" role="button" tabindex="0" title="Pared de TVs">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="4" y="6" width="24" height="16" rx="4"/><path d="M11 27h10"/></svg>
+        TVHub
+      </div>
     </div>
     <nav class="tvs" id="tvTabs" aria-label="Tus TVs"></nav>
-    <button class="btn" id="btnAdd">+ Añadir TV</button>
-    <button class="btn" id="btnScan" title="Buscar TVs en mi red">Buscar</button>
-    <button class="btn" id="btnWall" title="Ver todas las TVs a la vez (W)" aria-pressed="false">Pared</button>
-    <div class="spacer"></div>
-    <button class="btn icon" id="btnAll" title="Encender o apagar todas las TVs" aria-label="Encender o apagar todas las TVs"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1011.4 0"/></svg></button>
-    <div class="pill" id="statusPill"><span class="dot" id="dot"></span><span id="statusText">Conectando…</span></div>
-    <button class="btn icon" id="btnMenu" title="Menú" aria-label="Menú" aria-haspopup="dialog" aria-expanded="false" aria-controls="drawer"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <div class="hr">
+      <button class="btn icon" id="btnEdit" title="Ajustes de esta TV" aria-label="Ajustes de esta TV" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button>
+      <button class="btn icon" id="btnAll" title="Encender o apagar todas las TVs" aria-label="Encender o apagar todas las TVs"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1011.4 0"/></svg></button>
+      <div class="pill" id="statusPill"><span class="dot" id="dot"></span><span id="statusText">Conectando…</span></div>
+    </div>
   </header>
   <div id="scrim" hidden></div>
   <aside id="drawer" role="dialog" aria-label="Menú" aria-hidden="true" inert>
     <div class="who"><span class="av" id="whoAv"></span><span><b id="whoName"></b><small id="whoRole"></small></span></div>
     <div class="dhead"><b>Menú</b><button class="icon-btn" id="btnMenuClose" aria-label="Cerrar menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-    <button class="ditem" id="btnEdit" title="Ajustes de esta TV">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
-      <span><b id="editLabel">Ajustes</b><small>Nombre, IP, HDMI, emparejar…</small></span>
-    </button>
     <button class="ditem" id="btnHA" title="Conectar con Home Assistant (MQTT)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
       <span><b>Home Assistant</b><small>Integración por MQTT</small></span>
@@ -632,6 +640,9 @@
         <option value="android">Android TV · Google TV · Fire TV (ADB)</option>
         <option value="vidaa">Hisense VIDAA (MQTT)</option>
         <option value="webos">LG webOS (red local)</option>
+        <option value="roku">Roku (red local)</option>
+        <option value="samsung">Samsung Tizen (red local)</option>
+        <option value="sony">Sony Bravia (red local)</option>
       </select>
     </label>
     <div class="two">
@@ -686,6 +697,23 @@ const store = {
 const LANGS = [["es", "Español"], ["en", "English"], ["pt", "Português"], ["fr", "Français"], ["de", "Deutsch"]];
 const LIDX = { en: 0, pt: 1, fr: 2, de: 3 };
 const I18N = {
+"TVHub en GitHub": ["TVHub on GitHub", "TVHub no GitHub", "TVHub sur GitHub", "TVHub auf GitHub"],
+"Añadir otra TV": ["Add another TV", "Adicionar outra TV", "Ajouter une autre TV", "Weiteren TV hinzufügen"],
+"Buscar en la red": ["Search the network", "Buscar na rede", "Rechercher sur le réseau", "Im Netzwerk suchen"],
+"Roku (red local)": ["Roku (local network)", "Roku (rede local)", "Roku (réseau local)", "Roku (lokales Netzwerk)"],
+"Samsung Tizen (red local)": ["Samsung Tizen (local network)", "Samsung Tizen (rede local)", "Samsung Tizen (réseau local)", "Samsung Tizen (lokales Netzwerk)"],
+"Sony Bravia (red local)": ["Sony Bravia (local network)", "Sony Bravia (rede local)", "Sony Bravia (réseau local)", "Sony Bravia (lokales Netzwerk)"],
+"En espera": ["Standby", "Em espera", "En veille", "Standby"],
+"Clave PSK de la TV": ["TV PSK key", "Chave PSK da TV", "Clé PSK de la TV", "PSK-Schlüssel des Fernsehers"],
+"Guardar clave": ["Save key", "Guardar chave", "Enregistrer la clé", "Schlüssel speichern"],
+"En la TV: Ajustes → Red → Configuración de red doméstica → Control IP → Clave precompartida. Escríbela aquí.": ["On the TV: Settings → Network → Home network setup → IP control → Pre-Shared Key. Enter it here.", "Na TV: Configurações → Rede → Configuração de rede doméstica → Controle IP → Chave pré-compartilhada. Digite-a aqui.", "Sur la TV : Paramètres → Réseau → Configuration du réseau domestique → Contrôle IP → Clé pré-partagée. Saisissez-la ici.", "Am TV: Einstellungen → Netzwerk → Heimnetzwerk-Einrichtung → IP-Steuerung → Pre-Shared Key. Hier eingeben."],
+"Emparejada.": ["Paired.", "Emparelhada.", "Appairée.", "Gekoppelt."],
+"Clave guardada.": ["Key saved.", "Chave guardada.", "Clé enregistrée.", "Schlüssel gespeichert."],
+"Ya hay un emparejamiento en curso: acepta el aviso en la TV.": ["A pairing is already in progress: accept the prompt on the TV.", "Já há um emparelhamento em andamento: aceite o aviso na TV.", "Un appairage est déjà en cours : acceptez l'invite sur la TV.", "Eine Kopplung läuft bereits: bestätige die Meldung am TV."],
+"orden de encendido enviada": ["power-on command sent", "comando de ligar enviado", "commande d'allumage envoyée", "Einschaltbefehl gesendet"],
+"Escribe la clave precompartida (PSK) que pusiste en la TV (1-40 caracteres, sin espacios).": ["Enter the pre-shared key (PSK) you set on the TV (1-40 characters, no spaces).", "Digite a chave pré-compartilhada (PSK) que você definiu na TV (1-40 caracteres, sem espaços).", "Saisissez la clé pré-partagée (PSK) définie sur la TV (1 à 40 caractères, sans espaces).", "Gib den auf dem TV festgelegten Pre-Shared Key (PSK) ein (1-40 Zeichen, keine Leerzeichen)."],
+"La TV rechazó la clave. Revisa Ajustes → Red → Configuración de red doméstica → Control IP → Clave precompartida.": ["The TV rejected the key. Check Settings → Network → Home network setup → IP control → Pre-Shared Key.", "A TV recusou a chave. Verifique Configurações → Rede → Configuração de rede doméstica → Controle IP → Chave pré-compartilhada.", "La TV a refusé la clé. Vérifiez Paramètres → Réseau → Configuration du réseau domestique → Contrôle IP → Clé pré-partagée.", "Der TV hat den Schlüssel abgelehnt. Prüfe Einstellungen → Netzwerk → Heimnetzwerk-Einrichtung → IP-Steuerung → Pre-Shared Key."],
+"No se aceptó el aviso a tiempo o no llegó a la TV. Enciéndela, activa en ella Ajustes → General → Administrador de dispositivos externos → «Notificación de acceso» y vuelve a intentarlo.": ["The prompt wasn't accepted in time or didn't reach the TV. Turn it on, enable Settings → General → External Device Manager → “Access Notification” and try again.", "O aviso não foi aceito a tempo ou não chegou à TV. Ligue-a, ative Configurações → Geral → Gerenciador de dispositivos externos → «Notificação de acesso» e tente novamente.", "L'invite n'a pas été acceptée à temps ou n'a pas atteint la TV. Allumez-la, activez Paramètres → Général → Gestionnaire de périphériques externes → « Notification d'accès » et réessayez.", "Die Meldung wurde nicht rechtzeitig bestätigt oder kam nicht an. TV einschalten, Einstellungen → Allgemein → Externer Geräte-Manager → „Zugriffsbenachrichtigung“ aktivieren und erneut versuchen."],
 "Tus TVs": ["Your TVs", "Suas TVs", "Vos TV", "Deine TVs"],
 "+ Añadir TV": ["+ Add TV", "+ Adicionar TV", "+ Ajouter une TV", "+ TV hinzufügen"],
 "Buscar TVs en mi red": ["Find TVs on my network", "Procurar TVs na minha rede", "Chercher des TV sur mon réseau", "TVs in meinem Netzwerk suchen"],
@@ -1100,8 +1128,12 @@ function toast(msg) {
 function showOverlay(title, msg) { $("ovTitle").textContent = title; $("ovMsg").textContent = msg; $("overlay").classList.remove("hide"); }
 function hideOverlay() { $("overlay").classList.add("hide"); }
 
-const TYPE_LABEL = { android: "ANDROID", vidaa: "VIDAA", webos: "WEBOS" };
-const DEF_PORT = { android: 5555, vidaa: 36669, webos: 3001 };
+const TYPE_LABEL = { android: "ANDROID", vidaa: "VIDAA", webos: "WEBOS", roku: "ROKU", samsung: "SAMSUNG", sony: "SONY" };
+const DEF_PORT = { android: 5555, vidaa: 36669, webos: 3001, roku: 8060, samsung: 8002, sony: 80 };
+// A TV that answers on the network but reports itself in standby is "off" for the user (Roku, Samsung, Sony, LG).
+const standby = (t) => t.state === "device" && t.on === false;
+const dotCls = (t) => (standby(t) ? "" : t.state === "device" ? "ok" : t.state === "disconnected" ? "bad" : "warn");
+const stateTxt = (t) => (standby(t) ? T("En espera") : STATE_TXT[t.state] || t.state);
 const STATE_ES = {
   device: "Conectada", disconnected: "Sin conexión", unauthorized: "Acepta el aviso en la TV",
   needs_pairing: "Falta emparejar (Ajustes → Emparejar)", no_host: "Sin IP",
@@ -1113,8 +1145,8 @@ function renderTabs() {
   const box = $("tvTabs"); box.textContent = "";
   tvs.forEach((t, i) => {
     const b = document.createElement("button"); b.className = "tvtab" + (t.id === cur ? " active" : "");
-    b.title = `${t.name} · ${t.host} · ${STATE_TXT[t.state] || t.state}` + (i < 9 ? `  (${T("tecla {0}", i + 1)})` : "");
-    const d = document.createElement("span"); d.className = "dot " + (t.state === "device" ? "ok" : t.state === "disconnected" ? "bad" : "warn");
+    b.title = `${t.name} · ${t.host} · ${stateTxt(t)}` + (i < 9 ? `  (${T("tecla {0}", i + 1)})` : "");
+    const d = document.createElement("span"); d.className = "dot " + dotCls(t);
     const n = document.createElement("span"); n.textContent = t.name;
     const g = document.createElement("span"); g.className = "badge"; g.textContent = TYPE_LABEL[t.type] || t.type.toUpperCase();
     b.append(d, n, g); b.onclick = () => (wallOn ? openFromWall(t.id) : selectTV(t.id)); box.append(b);
@@ -1124,9 +1156,9 @@ function renderTabs() {
 function renderPill() {
   const t = curTV(), dot = $("dot"); dot.className = "dot";
   if (!t) { $("statusText").textContent = T("Sin TVs"); dot.classList.add("bad"); return; }
-  dot.classList.add(t.state === "device" ? "ok" : t.state === "disconnected" ? "bad" : "warn");
-  $("statusText").textContent = t.state === "device"
-    ? (t.model || t.name) + (t.app ? " · " + t.app : "") : STATE_TXT[t.state] || t.state;
+  if (dotCls(t)) dot.classList.add(dotCls(t));
+  $("statusText").textContent = t.state === "device" && !standby(t)
+    ? (t.model || t.name) + (t.app ? " · " + t.app : "") : standby(t) ? (t.model || t.name) + " · " + stateTxt(t) : STATE_TXT[t.state] || t.state;
 }
 
 // Show the logo of what the TV is running (or its HDMI input); keep the generic icon when there is none.
@@ -1163,10 +1195,10 @@ function renderStage() {
   if (!t) { showOverlay(T("Añade tu primera TV"), T("Pulsa «Buscar» para encontrarlas en tu red, o «+ Añadir TV» si ya sabes su IP. En Android hace falta la depuración ADB activada.")); return; }
   if (novid) {
     hideOverlay();
-    const on = t.state === "device";
+    const on = t.state === "device" && !standby(t);
     $("nvName").textContent = t.name + (t.model ? " · " + t.model : "");
-    $("nvState").textContent = STATE_TXT[t.state] || t.state;
-    $("nvDot").className = "dot " + (on ? "ok" : t.state === "disconnected" ? "bad" : "warn");
+    $("nvState").textContent = stateTxt(t);
+    $("nvDot").className = "dot " + dotCls(t);
     $("nvApp").textContent = on ? (t.app || "") : "";
     $("nvApp").hidden = !(on && t.app);
     $("nvVolBox").hidden = !(on && t.volume != null);
@@ -1244,7 +1276,13 @@ function renderRemote() {
   document.querySelectorAll('[data-k^="VOLUME_"]').forEach((b) => { b.title = via ? T("Se envía a {0}", via.name) : ""; });
 }
 
-function renderAll() { $("editLabel").textContent = curTV() ? T("Ajustes de {0}", curTV().name) : T("Añadir TV"); renderTabs(); renderPill(); renderStage(); renderRemote(); markActiveApp(); if (wallOn) renderWall(); }
+// The TV-settings gear lives in the top bar and only shows while a TV (not the wall) is on screen.
+function syncHeader() {
+  const t = curTV(), b = $("btnEdit");
+  b.hidden = !(me && me.role === "admin" && t && !wallOn);
+  if (t) { const l = T("Ajustes de {0}", t.name); b.title = l; b.setAttribute("aria-label", l); }
+}
+function renderAll() { syncHeader(); renderTabs(); renderPill(); renderStage(); renderRemote(); markActiveApp(); if (wallOn) renderWall(); }
 
 // ------------------------------------------------------------------ control socket
 let ctl, ctlBackoff = 500;
@@ -1502,17 +1540,22 @@ function fillVia(selected) {
   sel.value = selected || "";
 }
 function typeChanged() {
-  const ty = $("fType").value, v = ty === "vidaa", w = ty === "webos";
-  $("vidaaOpts").hidden = !(v || w);
+  const ty = $("fType").value, v = ty === "vidaa", w = ty === "webos", sam = ty === "samsung", sony = ty === "sony", net = w || sam || sony || ty === "roku";
+  $("vidaaOpts").hidden = !(v || net);
   $("tvRow").hidden = ty !== "android";
-  $("tlsRow").hidden = w;
-  $("macHint").textContent = w ? T("(opcional; solo para encenderla)") : T("(solo TVs recientes; opcional)");
+  $("tlsRow").hidden = net;
+  $("macHint").textContent = net ? T("(opcional; solo para encenderla)") : T("(solo TVs recientes; opcional)");
   $("fPort").placeholder = String(DEF_PORT[ty] || 5555);
-  $("fPort").disabled = w;
-  $("pairBox").hidden = !((v || w) && editing);
-  $("pinLine").hidden = w;
-  $("btnPairStart").textContent = w ? T("Emparejar con la TV") : T("Mostrar PIN en la TV");
-  $("pairHelp").textContent = w ? T("Pulsa el botón y acepta el aviso que aparece en la TV (tienes 30 segundos).")
+  $("fPort").disabled = w || sam;
+  const canPair = v || w || sam || sony;
+  $("pairBox").hidden = !(canPair && editing);
+  $("pinLine").hidden = w || sam;
+  $("btnPairStart").hidden = sony;
+  $("fPin").placeholder = sony ? T("Clave PSK de la TV") : "PIN"; $("fPin").inputMode = sony ? "text" : "numeric"; $("fPin").size = sony ? 18 : 6; $("fPin").maxLength = sony ? 40 : 8;
+  $("btnPairSend").textContent = sony ? T("Guardar clave") : T("Emparejar");
+  $("btnPairStart").textContent = (w || sam) ? T("Emparejar con la TV") : T("Mostrar PIN en la TV");
+  $("pairHelp").textContent = (w || sam) ? T("Pulsa el botón y acepta el aviso que aparece en la TV (tienes 30 segundos).")
+    : sony ? T("En la TV: Ajustes → Red → Configuración de red doméstica → Control IP → Clave precompartida. Escríbela aquí.")
     : T("Pulsa el botón: la TV mostrará un PIN. Escríbelo aquí.");
 }
 $("fType").addEventListener("change", typeChanged);
@@ -1528,20 +1571,20 @@ function openDialog(tv) {
   $("fType").querySelector('[value="webos"]').disabled = !webosOK;
   typeChanged(); dlg.showModal(); $("fName").focus();
 }
-$("btnAdd").onclick = () => openDialog(null);
+const addTV = () => openDialog(null);
 const drawer = $("drawer");
 function setDrawer(on) {
   drawer.classList.toggle("open", on); drawer.inert = !on; drawer.setAttribute("aria-hidden", String(!on));
   $("btnMenu").setAttribute("aria-expanded", String(on));
   const sc = $("scrim");
-  if (on) { sc.hidden = false; requestAnimationFrame(() => sc.classList.add("show")); $("btnEdit").focus(); }
+  if (on) { sc.hidden = false; requestAnimationFrame(() => sc.classList.add("show")); $("btnMenuClose").focus(); }
   else { sc.classList.remove("show"); setTimeout(() => { if (!drawer.classList.contains("open")) sc.hidden = true; }, 200); $("btnMenu").focus(); }
 }
 $("btnMenu").onclick = () => setDrawer(!drawer.classList.contains("open"));
 $("btnMenuClose").onclick = () => setDrawer(false);
 $("scrim").onclick = () => setDrawer(false);
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && drawer.classList.contains("open")) { e.preventDefault(); e.stopImmediatePropagation(); setDrawer(false); } }, true);
-$("btnEdit").onclick = () => { setDrawer(false); const t = curTV(); t ? openDialog(t) : openDialog(null); };
+$("btnEdit").onclick = () => { const t = curTV(); if (t) openDialog(t); };
 $("btnCancel").onclick = () => dlg.close();
 
 $("tvForm").addEventListener("submit", async (e) => {
@@ -1565,7 +1608,7 @@ $("btnDelete").onclick = async () => {
   if (wasCur) { cur = ""; videoStarted = false; stopVideo(); }
 };
 async function pair(pin) {
-  $("pairMsg").textContent = editing.type === "webos" ? T("Acepta el aviso en la TV…") : "…";
+  $("pairMsg").textContent = editing.type === "webos" || editing.type === "samsung" ? T("Acepta el aviso en la TV…") : "…";
   try {
     const r = await fetch(withQ(`/api/tvs/${editing.id}/pair`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pin ? { pin } : {}) });
     const j = await r.json(); $("pairMsg").textContent = j.message || j.error || "";
@@ -1639,11 +1682,14 @@ function wallTile(t) {
   if (w) return w;
   const el = document.createElement("button"); el.type = "button"; el.className = "wtile";
   el.innerHTML = '<div class="wpic"><img alt="" hidden><div class="wph"><img class="wlogo" alt="" hidden><svg class="wtv" viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="6" width="24" height="16" rx="4"/><path d="M11 27h10"/></svg><div class="wst"></div><div class="wvol"></div></div></div>' +
-    '<div class="wmeta"><span class="dot"></span><span class="wname"></span><span class="badge"></span><span class="wapp"></span><span class="wpw" role="button" tabindex="0" title="Encender / apagar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1011.4 0"/></svg></span></div>';
+    '<div class="wmeta"><span class="dot"></span><span class="wname"></span><span class="badge"></span><span class="wapp"></span><span class="wset" role="button" tabindex="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></span><span class="wpw" role="button" tabindex="0" title="Encender / apagar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1011.4 0"/></svg></span></div>';
   w = { id: t.id, el, img: el.querySelector("img"), url: "" };
   el.onclick = () => openFromWall(t.id);
+  const st = el.querySelector(".wset");
+  const onSet = (ev) => { ev.stopPropagation(); ev.preventDefault(); const x = tvs.find((q) => q.id === t.id); if (x) openDialog(x); };
+  st.onclick = onSet; st.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") onSet(ev); };
   const pw = el.querySelector(".wpw");
-  const onPw = (ev) => { ev.stopPropagation(); ev.preventDefault(); const x = tvs.find((q) => q.id === t.id); if (x) powerTV(x, x.state !== "device"); };
+  const onPw = (ev) => { ev.stopPropagation(); ev.preventDefault(); const x = tvs.find((q) => q.id === t.id); if (x) powerTV(x, x.state !== "device" || standby(x)); };
   pw.onclick = onPw; pw.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") onPw(ev); };
   wallTiles.set(t.id, w);
   return w;
@@ -1655,15 +1701,17 @@ function renderWall() {
     const w = wallTile(t), e = w.el;
     e.classList.toggle("active", t.id === cur);
     e.title = `${t.name} · ${t.host}` + (i < 9 ? `  (${T("tecla {0}", i + 1)})` : "");
-    e.querySelector(".dot").className = "dot " + (t.state === "device" ? "ok" : t.state === "disconnected" ? "bad" : "warn");
+    e.querySelector(".dot").className = "dot " + dotCls(t);
+    e.classList.toggle("standby", standby(t));
     e.querySelector(".wname").textContent = t.name;
     e.querySelector(".badge").textContent = TYPE_LABEL[t.type] || t.type.toUpperCase();
-    e.querySelector(".wapp").textContent = t.state === "device" ? (t.app || "") : "";
-    e.querySelector(".wvol").textContent = t.state === "device" && t.volume != null ? (t.muted ? T("🔇 mute") : T("Volumen {0}", t.volume)) : "";
-    e.querySelector(".wst").textContent = t.state === "device" ? (t.caps.snapshot && !w.url ? T("Cargando captura…") : (t.caps.snapshot ? "" : (t.app || T("Conectada"))))
+    e.querySelector(".wapp").textContent = t.state === "device" && !standby(t) ? (t.app || "") : "";
+    e.querySelector(".wvol").textContent = t.state === "device" && !standby(t) && t.volume != null ? (t.muted ? T("🔇 mute") : T("Volumen {0}", t.volume)) : "";
+    e.querySelector(".wst").textContent = standby(t) ? stateTxt(t) : t.state === "device" ? (t.caps.snapshot && !w.url ? T("Cargando captura…") : (t.caps.snapshot ? "" : (t.app || T("Conectada"))))
       : (STATE_TXT[t.state] || t.state);
-    w.img.hidden = !(w.url && t.state === "device");
-    e.querySelector(".wpw").title = t.state === "device" ? T("Apagar {0}", t.name) : T("Encender {0}", t.name);
+    w.img.hidden = !(w.url && t.state === "device" && !standby(t));
+    const gs = e.querySelector(".wset"); gs.hidden = !(me && me.role === "admin"); gs.title = T("Ajustes de {0}", t.name); gs.setAttribute("aria-label", gs.title);
+    e.querySelector(".wpw").title = t.state === "device" && !standby(t) ? T("Apagar {0}", t.name) : T("Encender {0}", t.name);
     const lg = e.querySelector(".wlogo");
     if (w.img.hidden) setLogo(lg, t, e.querySelector(".wtv")); else { lg.hidden = true; lg.dataset.src = ""; }
     if (box.children[i] !== e) box.insertBefore(e, box.children[i] || null);
@@ -1672,8 +1720,8 @@ function renderWall() {
   if (!emp) {
     emp = document.createElement("div"); emp.className = "wallempty";
     emp.innerHTML = '<h3></h3><p></p><div class="btns"><button type="button" class="btn primary" data-go="add"></button><button type="button" class="btn" data-go="scan"></button></div>';
-    emp.querySelector('[data-go="add"]').onclick = () => $("btnAdd").click();
-    emp.querySelector('[data-go="scan"]').onclick = () => $("btnScan").click();
+    emp.querySelector('[data-go="add"]').onclick = addTV;
+    emp.querySelector('[data-go="scan"]').onclick = openScan;
   }
   const adm = me && me.role === "admin";
   emp.querySelector("h3").textContent = T("Aún no hay TVs");
@@ -1681,6 +1729,15 @@ function renderWall() {
   emp.querySelector('[data-go="add"]').textContent = T("+ Añadir TV"); emp.querySelector('[data-go="scan"]').textContent = T("Buscar");
   emp.querySelector(".btns").hidden = !adm; emp.hidden = tvs.length > 0;
   box.append(emp);
+  let add = box.querySelector(".walladd");
+  if (!add) {
+    add = document.createElement("div"); add.className = "walladd";
+    add.innerHTML = '<b></b><div class="btns"><button type="button" class="btn primary" data-go="add"></button><button type="button" class="btn" data-go="scan"></button></div>';
+    add.querySelector('[data-go="add"]').onclick = addTV; add.querySelector('[data-go="scan"]').onclick = openScan;
+  }
+  add.querySelector("b").textContent = T("Añadir otra TV");
+  add.querySelector('[data-go="add"]').textContent = T("+ Añadir TV"); add.querySelector('[data-go="scan"]').textContent = T("Buscar en la red");
+  add.hidden = !(adm && tvs.length > 0); box.append(add);
   let hint = box.querySelector(".wallhint");
   if (!hint) { hint = document.createElement("p"); hint.className = "wallhint"; hint.textContent = T("Clic en una TV para abrirla con imagen en vivo · teclas 1-9 · W alterna entre la pared y el mando."); }
   box.append(hint);
@@ -1708,7 +1765,7 @@ async function wallLoop() {
 function setWall(on) {
   if (on === wallOn) return;
   wallOn = on; $("wall").hidden = !on; document.querySelector("main").hidden = on;
-  $("btnWall").classList.toggle("on", on); $("btnWall").setAttribute("aria-pressed", String(on));
+  syncHeader();
   if (on) { stopVideo(); renderWall(); wallLoop(); }
   else {
     clearTimeout(wallTimer);
@@ -1718,7 +1775,6 @@ function setWall(on) {
   }
 }
 function openFromWall(id) { if (id !== cur) { cur = id; store.set("tvhub.tv", id); } setWall(false); }
-$("btnWall").onclick = () => setWall(!wallOn);
 document.addEventListener("visibilitychange", () => { if (wallOn && !document.hidden) wallLoop(); });
 
 // ------------------------------------------------------------------ power all
@@ -1800,12 +1856,12 @@ $("scanForm").addEventListener("submit", async (e) => {
   finally { $("scanBusy").hidden = true; $("scanGo").disabled = false; }
 });
 $("scanClose").onclick = () => scanDlg.close();
-$("btnScan").onclick = openScan;
 
 // ------------------------------------------------------------------ account: role, password, users
 function applyRole() {
   const admin = me.role === "admin";
-  ["btnAdd", "btnScan", "btnEdit", "btnHA", "btnUsers"].forEach((id) => { $(id).hidden = !admin; });
+  ["btnHA", "btnUsers"].forEach((id) => { $(id).hidden = !admin; });
+  syncHeader();
   $("whoName").textContent = me.username; $("whoAv").textContent = me.username.slice(0, 1);
   $("whoRole").textContent = T(admin ? "Administrador" : "Usuario");
   if (wallOn) renderWall();

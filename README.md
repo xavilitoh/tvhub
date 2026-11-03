@@ -1,6 +1,6 @@
 # TVHub
 
-**One web remote for all your TVs — Android TV / Fire TV with a live picture of the screen, LG webOS, and Hisense VIDAA.**
+**One web remote for all your TVs — Android TV / Fire TV with a live picture of the screen, LG webOS, Samsung Tizen, Sony Bravia, Roku and Hisense VIDAA.**
 Keep a list of TVs, switch between them with one click (or keys <kbd>1</kbd>–<kbd>9</kbd>). Runs in Docker, opens in your browser.
 
 ![TVHub: live screen, network search, wall view (simulated TVs)](docs/demo.gif)
@@ -12,16 +12,22 @@ Keep a list of TVs, switch between them with one click (or keys <kbd>1</kbd>–<
 |---|---|---|---|---|---|
 | **Android** (Fire TV, Google TV / Chromecast, Android TV) | ADB over TCP | ✅ H.264 | ✅ | ✅ | Enable ADB debugging |
 | **LG webOS** | Local network (ports 3000/3001), no LG account | ❌ | ✅ | ✅ | Keys, real volume/mute, power off; accept a prompt on the TV once |
+| **Samsung Tizen** (2016+) · *experimental* | Local network (WebSocket 8002) | ❌ | ✅ | ❌ | Keys, power; accept a prompt on the TV once. Volume by keys only |
+| **Sony Bravia** · *experimental* | Local network (REST + IR codes, port 80) | ❌ | ✅ | ✅ | Needs the *Pre-Shared Key* set on the TV; real volume, HDMI inputs |
+| **Roku** (players and Roku TV) · *experimental* | ECP (port 8060), no pairing | ❌ | ✅ | ✅ | Roku TV: power, volume keys and HDMI inputs |
 | **Hisense VIDAA** | MQTT (port 36669) | ❌ | ❌ | ❌ | Remote keys + volume |
+
+> **Experimental:** the Roku, Samsung and Sony drivers have only been tested against simulators, not real TVs. If you own one, please open an issue with your model and firmware, whether it works or not.
 
 ## What it does
 
 - **All TVs on / off** — the power button at the top right sends the order to every TV in the list at once and tells you which ones did it. Turning on needs the TV to answer over the network (Android with ADB) or its MAC saved for Wake-on-LAN (LG, Hisense). Wake-on-LAN is a broadcast: it does not leave Docker Desktop on macOS / Windows, so there use Linux with `network_mode: host`, or wake those TVs by other means.
-- **Wall view** — all your TVs at once (<kbd>W</kbd>): a refreshed screenshot for each Android TV, the state and volume for LG / Hisense. Click one to open it live.
+- **Wall view** (the home page) — all your TVs at once (<kbd>W</kbd>): a refreshed screenshot for each Android TV, and for the others their state, the app or input in front and the volume. The state updates live: a TV that answers but is asleep shows **En espera**, and the tile's power button turns it on or off accordingly. Click one to open it.
 - **Languages** — English, Español, Português, Français and Deutsch. It follows your browser's language (English if yours isn't listed); change it from the ☰ menu. Messages sent by the server for rarer errors may still appear in Spanish.
 - **App logos** — each app shows its real logo (fetched once from [Simple Icons](https://simpleicons.org) and cached; LG TVs supply their own). Apps without a known logo keep coloured initials. On TVs without live video (LG, Hisense) the logo of what's playing fills the screen.
 - **HDMI inputs** — switch input from the remote on LG, Hisense and Android TV sets (tick *Es una Android TV* in Settings). For a Fire Stick, set the TV it's plugged into and its HDMI port, and **Mostrar en la TV** switches that TV to the stick.
-- **Per-TV power** — Encender / Apagar for the TV you're on, and a power button on every wall tile (the TV needs its MAC for Wake-on-LAN to turn on LG / Hisense).
+- **Per-TV power** — Encender / Apagar for the TV you're on, and a power button on every wall tile. TVs that stay reachable in standby (Roku, Sony, Samsung) are turned on over the network; for the rest TVHub sends Wake-on-LAN, which needs the TV's MAC saved in Settings.
+- **Reconnection** — a TV that drops off the network (or is unplugged) is retried automatically and comes back by itself; no restart needed.
 - **Network search** — one button finds LG, Hisense and Android / Fire TVs on your network and adds them.
 - **TV list** — add, rename, edit and delete TVs from the UI; stored in `/data/tvs.json`.
 - **Live screen** (Android) — real H.264 video from the TV (`screenrecord`), decoded in the browser with WebCodecs. Not screenshots.
@@ -59,6 +65,20 @@ Enable **Developer options → ADB debugging** (Fire TV: *Settings → My Fire T
 2. Add a TV of type **LG webOS** with its IP. A MAC is optional (only to wake it with Wake-on-LAN).
 3. Open **Ajustes** on that TV → **Emparejar con la TV** and accept the prompt on the screen within 30 s. The key is kept in `/data/webos-keys.json`.
 4. This is the same local protocol Home Assistant's *LG webOS Smart TV* integration uses — not the LG ThinQ cloud account.
+
+### Samsung Tizen
+1. On the TV: *Settings → General → External Device Manager → Device Connect Manager → Access Notification* on (names vary by year), and keep it on the same network.
+2. Add a TV of type **Samsung Tizen** with its IP (port 8002 is fixed). Add its MAC if you want to wake it.
+3. Open **Ajustes** → **Emparejar con la TV** and accept the prompt on the screen within 30 s. The token is kept in `/data/samsung-tokens.json`.
+4. App list and launching depend on the model; very new models may only show a short built-in list.
+
+### Sony Bravia
+1. On the TV: *Settings → Network → Home network setup → IP control*: set **Authentication** to *Normal and Pre-Shared Key*, set a **Pre-Shared Key** (e.g. a word you choose), and turn on **Simple IP control**.
+2. Add a TV of type **Sony Bravia** with its IP (port 80). Add its MAC to wake it from deep standby.
+3. Open **Ajustes** → type the key → **Guardar clave** (it is checked against the TV first). It is kept in `/data/sony-psk.json` and never sent back to the browser.
+
+### Roku
+No pairing. Add a TV of type **Roku** with its IP (port 8060). If it doesn't answer, set *Settings → System → Advanced system settings → Control by mobile apps* to **Permissive**. Roku has no absolute volume, so only Vol+/Vol−/Mute exist.
 
 ### Hisense VIDAA
 1. Add a TV of type **Hisense VIDAA**, with its IP and port `36669`.
@@ -142,11 +162,13 @@ docker compose up -d --build                       # in the new folder
 | LG webOS (ports 3000 + 3001) | ✅ — then *Ajustes → Emparejar* |
 | Hisense VIDAA (port 36669) | ✅ |
 | Android TV / Fire TV / Google TV with ADB on (port 5555) | ✅ |
-| Roku, Samsung, Chromecast, Android TV with ADB off | Shown, but not controllable (yet) |
+| Roku (port 8060), Samsung Tizen (8001/8002) | ✅ — Samsung then *Ajustes → Emparejar* |
+| Chromecast, Android TV with ADB off | Shown, but not controllable (yet) |
 
 - It does a plain TCP sweep of the networks in the box (a /24 takes about 7 s; up to a /22 per scan). That works on every setup, **including Docker Desktop on macOS and Windows**. TVHub proposes the network you opened the page from; type others separated by commas (e.g. `192.168.1.0/24, 192.168.10.0/24` if your TVs sit on different VLANs).
 - Only private ranges are scanned (`192.168.x.x`, `10.x.x.x`, `172.16-31.x.x`).
 - On **Linux** you can also let it use SSDP multicast by sharing the host network: in `docker-compose.yml` replace the `ports:` block with `network_mode: host`. Docker Desktop on Mac/Windows does not forward multicast, so there the sweep is what finds your TVs.
+- Roku and Samsung are found and can be added directly. Sony Bravia is not auto-detected (port 80 is too common to sweep): add it by IP.
 - Names come from the TV when it offers one (Roku, Samsung, Chromecast / Google TV); otherwise you get the TV type and its IP, and you can rename it when you add it.
 - A device that is off, or has ADB / network control disabled, won't show up. Turn it on and search again.
 
@@ -194,7 +216,7 @@ Browser ──WebSocket /ws/video?tv=<id> (H.264, one message per frame)──�
 ## Limits
 
 - **DRM content** (Netflix, Prime Video…) is usually black in the live picture. Control still works.
-- **VIDAA and webOS have no live picture** — their protocols don't offer one. VIDAA also has no app list.
+- **Only Android has a live picture** — the other brands' protocols don't offer one. VIDAA also has no app list; Samsung can't type text; Roku and Samsung have no absolute volume.
 - **Latency** is whatever `screenrecord` + Wi‑Fi gives you.
 - **Browser:** tested in Chromium only.
 - **Text input** is ASCII only.
@@ -206,6 +228,7 @@ v0.4.
 - **Tested:** server, framing, multi-TV registry and persistence, volume routing and the whole browser UI, end to end against a simulated ADB (ffmpeg H.264 at ~30 fps in Chromium) a simulated MQTT broker (keys arrive as `KEY_UP`, `KEY_RETURNS`, `KEY_VOLUMEUP`…) a real MQTT broker for the Home Assistant bridge (discovery of 21 entities, button/app/text commands reaching the TV, removal when a TV is deleted, reconnect after a broker restart), and a simulated LG webOS TV (pairing prompt, buttons, volume/mute, app list and launch, text input, key persisted across restarts).
 - **Checked on a real Fire TV Stick 4K Max (Fire OS 7):** ADB, key events, `screenrecord`, package list.
 - **Not verified against a real Home Assistant:** discovery payloads follow the documented MQTT discovery schema and work against a plain broker, but I could not run Home Assistant itself.
+- **Roku, Samsung and Sony drivers: tested only against simulators I wrote from the public protocol descriptions** (pairing/PSK, keys, apps, inputs, volume, power, standby detection, reconnection after the TV drops, token/PSK handling). I have not had these TVs in hand, so model-specific differences (especially Samsung apps/launch and Sony app and input URIs) are likely to need fixes. Reports with model and firmware are very welcome.
 - **Not verified on real hardware:** the LG webOS driver (uses the maintained `aiowebostv` library, but it has only run against a simulator here) and the Hisense/VIDAA driver (pairing, state detection, which keys each firmware accepts — newer firmware may reject or ignore commands), app launching and text input, and the Docker image itself. Reports with your TV model and firmware are very welcome.
 
 ## Configuration
