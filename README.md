@@ -16,7 +16,12 @@ Keep a list of TVs, switch between them with one click (or keys <kbd>1</kbd>–<
 
 ## What it does
 
+- **All TVs on / off** — the power button at the top right sends the order to every TV in the list at once and tells you which ones did it. Turning on needs the TV to answer over the network (Android with ADB) or its MAC saved for Wake-on-LAN (LG, Hisense). Wake-on-LAN is a broadcast: it does not leave Docker Desktop on macOS / Windows, so there use Linux with `network_mode: host`, or wake those TVs by other means.
 - **Wall view** — all your TVs at once (<kbd>W</kbd>): a refreshed screenshot for each Android TV, the state and volume for LG / Hisense. Click one to open it live.
+- **Languages** — English, Español, Português, Français and Deutsch. It follows your browser's language (English if yours isn't listed); change it from the ☰ menu. Messages sent by the server for rarer errors may still appear in Spanish.
+- **App logos** — each app shows its real logo (fetched once from [Simple Icons](https://simpleicons.org) and cached; LG TVs supply their own). Apps without a known logo keep coloured initials. On TVs without live video (LG, Hisense) the logo of what's playing fills the screen.
+- **HDMI inputs** — switch input from the remote on LG, Hisense and Android TV sets (tick *Es una Android TV* in Settings). For a Fire Stick, set the TV it's plugged into and its HDMI port, and **Mostrar en la TV** switches that TV to the stick.
+- **Per-TV power** — Encender / Apagar for the TV you're on, and a power button on every wall tile (the TV needs its MAC for Wake-on-LAN to turn on LG / Hisense).
 - **Network search** — one button finds LG, Hisense and Android / Fire TVs on your network and adds them.
 - **TV list** — add, rename, edit and delete TVs from the UI; stored in `/data/tvs.json`.
 - **Live screen** (Android) — real H.264 video from the TV (`screenrecord`), decoded in the browser with WebCodecs. Not screenshots.
@@ -34,8 +39,7 @@ docker run -d --name tvhub --restart unless-stopped -p 127.0.0.1:8080:8080 -v tv
 open http://localhost:8080
 ```
 
-To reach it from other devices (for example the Home Assistant integration) publish the port on your network **and set a token**:
-`-p 8080:8080 -e TVHUB_TOKEN=a-long-random-string`.
+The first time you open it, TVHub asks you to create the **administrator account** (see [Security](#security)). To reach it from other devices (for example the Home Assistant integration) publish the port on your network, ideally behind HTTPS: `-p 8080:8080`.
 
 Or build it from source:
 
@@ -89,10 +93,10 @@ Settings are saved in `/data/ha.json` (readable only by the TVHub user, password
 
 MQTT can't create `media_player` entities, so TVHub also ships a small Home Assistant integration (`custom_components/tvhub`). It gives every TV a **media_player** with on/off, volume (slider, steps, mute), play/pause/stop/rewind/forward, and the **app list as sources** — it works with the standard media control card, voice assistants and automations (`media_player.select_source`, `media_player.volume_set`…).
 
-1. Let Home Assistant reach TVHub: create a `.env` file next to `docker-compose.yml` (it is git-ignored) with `TVHUB_BIND=0.0.0.0` and `TVHUB_TOKEN=<a long random string>` (e.g. `openssl rand -hex 16`), then `docker compose up -d --build`. Open the web UI once as `http://localhost:8080/?token=<token>`.
+1. Let Home Assistant reach TVHub: create a `.env` file next to `docker-compose.yml` (it is git-ignored) with `TVHUB_BIND=0.0.0.0`, then `docker compose up -d --build`. In the web UI open ☰ → **Usuarios → Tokens de API**, create a token for Home Assistant and copy it (it is shown only once).
 2. Install the integration with **HACS**: [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=xavilitoh&repository=tvhub&category=integration)
    or by hand: HACS → ⋮ → *Custom repositories* → `https://github.com/xavilitoh/tvhub`, category **Integration** → *Download* → restart Home Assistant. (Without HACS, copy `custom_components/tvhub` into your `config/custom_components/`.)
-3. *Settings → Devices & services → Add integration → TVHub*: the IP of the machine running TVHub, port 8080, and the token.
+3. *Settings → Devices & services → Add integration → TVHub*: the IP of the machine running TVHub, port 8080, and the API token. (API tokens have the `user` role: they can control TVs but not add/remove TVs or manage users.)
 
 State refreshes every 3 s. *Volume set* works on LG and Hisense; a Fire Stick whose volume goes to your LG/Hisense (see *Volume routing*) shows and controls that TV's volume. *Turn on* uses Wake-on-LAN on LG (give TVHub the TV's MAC) and wake/sleep keys on Android TV.
 
@@ -148,15 +152,30 @@ docker compose up -d --build                       # in the new folder
 
 ## Open it from another device
 
-Use `http://localhost:8080` on the machine running Docker. Browsers only enable WebCodecs on `localhost` and HTTPS; over plain `http://192.168.x.x` the live picture falls back to snapshots. For other devices put it behind HTTPS and **set a token**:
+Use `http://localhost:8080` on the machine running Docker. Browsers only enable WebCodecs on `localhost` and HTTPS; over plain `http://192.168.x.x` the live picture falls back to snapshots. For other devices put TVHub behind an HTTPS reverse proxy and set `TVHUB_TRUST_PROXY=1` (see [Security](#security)). By default it only listens on `127.0.0.1`.
 
-```yaml
-ports: ["8080:8080"]
-environment:
-  TVHUB_TOKEN: "a-long-random-string"   # then open https://…/?token=a-long-random-string once
-```
+## Security
 
-Anyone who can open the page can control your TVs. By default it only listens on `127.0.0.1`.
+TVHub has no open access: every API call and WebSocket needs a signed-in user or an API token.
+
+**First run.** When no user exists, the page shows the *create administrator* form. To prove you control the server, it asks for a one-time **setup code** printed in the container log: `docker compose logs tvhub` (or set your own with `TVHUB_SETUP_TOKEN`). Until an admin exists, nothing else works.
+
+**Roles.** `admin` (add/remove TVs, Home Assistant settings, users, API tokens) and `user` (watch and control TVs). The last active admin can't be deleted or disabled.
+
+**What is implemented** (aligned with OWASP ASVS / NIST SP 800-63B):
+- Passwords hashed with **Argon2id**; 12–128 characters, no composition rules, rejected if common/guessable, repetitive or containing the username; all characters allowed.
+- Server-side sessions: random 256-bit token, stored only as a SHA-256 hash; cookie `HttpOnly`, `SameSite=Strict` (and `Secure` + `__Host-` prefix over HTTPS). Idle timeout 2 h, absolute 12 h ("remember me": 7 / 30 days). Max 10 sessions per user. Changing a password closes all other sessions and open live streams; deleting or disabling a user does too.
+- **CSRF** protection (per-session header token + `Origin` check, also on WebSockets).
+- **Brute-force protection**: per IP+user, per IP and per account counters with exponential lockout and `Retry-After`; unknown users cost the same time as known ones; generic error messages.
+- Security headers: strict CSP (script nonce), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: no-referrer`, COOP/CORP, `Permissions-Policy`, HSTS over HTTPS, `no-store` on the API. Request bodies are capped.
+- **Audit log** at `/data/audit.log` (JSON lines, 0600, rotated) with logins, failures, lockouts, user/token/TV changes — never passwords or tokens. Data files (`users.json`, `sessions.json`) are 0600 and written atomically.
+- **Recovery** if you lose the admin password: `docker compose exec tvhub python app/security.py reset-password <user>`.
+
+**Behind a reverse proxy / HTTPS** (strongly recommended for anything beyond localhost): terminate TLS in Caddy/nginx/Traefik, forward `X-Forwarded-For` and `X-Forwarded-Proto`, and set `TVHUB_TRUST_PROXY=1` — only when the proxy is the sole way in, otherwise clients could spoof their IP.
+
+**Upgrading from a version without users.** On first start you'll be asked to create the admin. The old `TVHUB_TOKEN` still works as a *legacy* Bearer token with the `user` role (deprecated; use API tokens instead).
+
+**Honest limits:** no multi-factor authentication yet; no breached-password (HIBP) lookup, only a built-in common-password list; the container runs as root; it has not had an independent security audit. Don't expose it directly to the internet.
 
 ## How it works
 
@@ -195,7 +214,10 @@ v0.4.
 |---|---|---|
 | `TV_HOST` | – | Seeds the first Android TV on first start (everything else is edited in the UI) |
 | `TV_PORT` | `5555` | Port for that seeded TV |
-| `TVHUB_TOKEN` | – | If set, every request needs `?token=…` (stored as a cookie afterwards) |
+| `TVHUB_SETUP_TOKEN` | random, in the log | First-run setup code |
+| `TVHUB_TRUST_PROXY` | – | `1` to trust `X-Forwarded-For/Proto` from a reverse proxy |
+| `TVHUB_SESSION_IDLE` / `TVHUB_SESSION_MAX` | `7200` / `43200` | Session idle / absolute lifetime (seconds) |
+| `TVHUB_TOKEN` | – | Deprecated legacy Bearer token (role `user`); prefer API tokens |
 | `PORT` | `8080` | HTTP port inside the container |
 | `MQTT_HOST` | – | Enables the Home Assistant bridge (see above) |
 | `MQTT_PORT` / `MQTT_USER` / `MQTT_PASSWORD` | `1883` / – / – | Broker connection |

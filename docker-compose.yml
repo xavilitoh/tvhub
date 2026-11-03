@@ -4,18 +4,19 @@ services:
     container_name: tvhub
     restart: unless-stopped
     # Linux only: to let "Buscar TVs" also use SSDP multicast, drop the `ports:` block below and use
-    #   network_mode: host        (TVHub then listens on :8080 of the host itself; set TVHUB_TOKEN)
+    #   network_mode: host        (TVHub then listens on :8080 of the host itself)
     # Docker Desktop (Mac / Windows) cannot forward multicast; the network sweep works there without it.
     ports:
-      # Localhost only by default: anyone who can open this page can control your TV.
-      # To reach it from other devices (e.g. the Home Assistant integration), create a `.env` file next to this one:
-      #   TVHUB_BIND=0.0.0.0
-      #   TVHUB_TOKEN=a-long-random-string
+      # Localhost only by default. To reach it from other devices (e.g. the Home Assistant integration),
+      # create a `.env` file next to this one with:  TVHUB_BIND=0.0.0.0   (prefer an HTTPS reverse proxy)
       - "${TVHUB_BIND:-127.0.0.1}:8080:8080"
     environment:
       TZ: "UTC"
       # TV_HOST: "192.168.1.50"        # optional: seeds a first Android TV; you can add TVs from the web UI
-      TVHUB_TOKEN: "${TVHUB_TOKEN:-}"      # set it in .env when TVHUB_BIND is not 127.0.0.1
+      # First run: create the admin in the web UI; the setup code is in `docker compose logs tvhub`
+      # (or fix it yourself with TVHUB_SETUP_TOKEN in .env).
+      TVHUB_SETUP_TOKEN: "${TVHUB_SETUP_TOKEN:-}"
+      # TVHUB_TRUST_PROXY: "1"            # only behind a reverse proxy that sets X-Forwarded-For/Proto
       # Home Assistant: you can set this from the web UI (button "Home Assistant"). These only seed the defaults.
       # MQTT_HOST: "192.168.1.10"
       # MQTT_PORT: "1883"

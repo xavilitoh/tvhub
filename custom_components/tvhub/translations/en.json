@@ -3,18 +3,18 @@
     "step": {
       "user": {
         "title": "Connect to TVHub",
-        "description": "Where your TVHub server runs (the one at http://IP:8080). If you set TVHUB_TOKEN, enter it here.",
+        "description": "Where your TVHub server runs (the one at http://IP:8080), plus an API token created in TVHub → menu → Users → API tokens.",
         "data": {
           "host": "TVHub host or IP",
           "port": "Port",
-          "token": "Token (optional)",
+          "token": "API token",
           "ssl": "Use HTTPS"
         }
       }
     },
     "error": {
       "cannot_connect": "Cannot reach TVHub. Check the IP, the port, and that the port is published on your network (not just 127.0.0.1).",
-      "invalid_auth": "TVHub asks for a token and it is missing or wrong."
+      "invalid_auth": "TVHub requires a valid API token (create one under Users → API tokens)."
     },
     "abort": {
       "already_configured": "This TVHub server is already configured."

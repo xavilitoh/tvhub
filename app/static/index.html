@@ -105,9 +105,11 @@
 
   .quality { display: flex; align-items: center; gap: 8px; margin-top: 18px; position: relative; z-index: 1; color: var(--dim); font-size: 13px; }
 
-  .apps { position: relative; z-index: 1; margin-top: 14px; display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; scrollbar-width: thin; }
+  /* the apps fill the width and wrap; more than 3 rows scroll inside the block */
+  .apps { position: relative; z-index: 1; margin-top: 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px 10px;
+    max-height: 346px; overflow-y: auto; padding: 4px 2px 10px; scrollbar-width: thin; }
   .app {
-    flex: none; width: 88px; display: grid; justify-items: center; gap: 7px; padding: 10px 6px;
+    min-width: 0; display: grid; justify-items: center; gap: 7px; padding: 10px 6px;
     border-radius: 16px; border: 1px solid transparent; transition: background .15s, transform .1s;
   }
   .app:hover { background: var(--panel); border-color: var(--line); }
@@ -197,10 +199,25 @@
     background: radial-gradient(70% 70% at 50% 40%, #171a23, #0a0b0f);
   }
   .novideo[hidden] { display: none; }
-  .novideo svg { width: 64px; height: 64px; opacity: .85; }
-  .novideo h3 { font-size: 22px; font-weight: 650; letter-spacing: -.01em; }
-  .novideo p { color: var(--dim); max-width: 420px; }
-  .novideo .vol { font-size: 44px; font-weight: 300; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .nvcard { display: grid; justify-items: center; gap: 6px; width: min(420px, 100%); }
+  .nvart { width: 124px; height: 124px; display: grid; place-items: center; margin-bottom: 10px; border-radius: 30px; position: relative; }
+  .nvart::before { content: ""; position: absolute; inset: -18px; border-radius: 48px; background: radial-gradient(closest-side, rgba(110,168,255,.22), transparent); z-index: 0; }
+  .nvart > * { position: relative; z-index: 1; }
+  .nvart svg { width: 72px; height: 72px; opacity: .8; }
+  .nvlabel { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6f7480; }
+  .novideo h3.nvnow { font-size: 30px; font-weight: 650; letter-spacing: -.02em; line-height: 1.15; }
+  .nvsub { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 13.5px; flex-wrap: wrap; justify-content: center; }
+  .nvsub .sep { opacity: .5; }
+  .nvvol { display: flex; align-items: center; gap: 12px; margin-top: 18px; width: min(300px, 90%); color: var(--dim); }
+  #btnLive { margin-top: 16px; padding: 10px 18px; font-weight: 600; }
+  #btnLive[hidden], #nvNote[hidden] { display: none; }
+  .nvvol[hidden] { display: none; }
+  .nvvol svg { width: 20px; height: 20px; flex: none; }
+  .nvvol .bar { flex: 1; height: 6px; border-radius: 6px; background: rgba(255,255,255,.1); overflow: hidden; }
+  .nvvol .bar i { display: block; height: 100%; width: 0; background: var(--accent, #6ea8ff); border-radius: 6px; transition: width .25s; }
+  .nvvol.muted .bar i { background: #6f7480; }
+  .nvvol b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; min-width: 2.2em; text-align: right; }
+  .novideo p { color: #6f7480; font-size: 12px; margin-top: 14px; max-width: 360px; }
   .stage.novid .hud, .stage.novid .stage-tools { display: none; }
   .quality[hidden], .apps[hidden], .typebox[hidden], .stage-tools button[hidden] { display: none; }
 
@@ -238,7 +255,7 @@
   .wtile:hover { border-color: rgba(110,168,255,.55); transform: translateY(-1px); }
   .wtile.active { border-color: rgba(110,168,255,.75); }
   .wpic { position: relative; aspect-ratio: 16 / 9; background: #07080b; display: grid; place-items: center; }
-  .wpic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .wpic > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .wph { position: relative; text-align: center; color: var(--dim); font-size: 12.5px; padding: 10px; }
   .wph .wvol { font-size: 40px; font-weight: 300; color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
   .wmeta { display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 13px; }
@@ -246,6 +263,94 @@
   .wmeta .badge { font-size: 10px; letter-spacing: .06em; padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,.08); color: var(--dim); }
   .wmeta .wapp { margin-left: auto; color: var(--dim); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
   .wallhint { grid-column: 1 / -1; color: #6f7480; font-size: 11.5px; }
+  .app .ico { overflow: hidden; }
+  .app .ico img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .nvlogo { width: 96px; height: 96px; border-radius: 22px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  .nvlogo[hidden] { display: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .chips[hidden], #btnShow[hidden], #powerRow[hidden] { display: none; }
+  .chip { padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font-size: 12.5px; }
+  .chip:hover { background: var(--panel-hi); }
+  .chip.on { background: rgba(110,168,255,.2); border-color: rgba(110,168,255,.6); color: #fff; }
+  .chip.off { opacity: .5; }
+  #btnShow { width: 100%; margin-bottom: 10px; }
+  .wph { display: grid; justify-items: center; gap: 6px; }
+  .wlogo { width: 76px; height: 76px; border-radius: 18px; object-fit: cover; display: block; box-shadow: 0 8px 22px rgba(0,0,0,.5); }
+  .wtv { width: 56px; height: 56px; opacity: .55; }
+  .wph .wst { font-size: 14px; color: var(--text); font-weight: 600; }
+  .wph .wst:empty { display: none; }
+  .wph .wvol { font-size: 13px !important; font-weight: 500 !important; color: var(--dim) !important; }
+  .wph .wvol:empty { display: none; }
+  .wlogo[hidden] { display: none; }
+  .wpw { margin-left: 4px; flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--text); cursor: pointer; }
+  .wpw:hover { background: rgba(255,255,255,.16); }
+  .wpw svg { width: 15px; height: 15px; }
+  #btnMenu { margin-left: 2px; }
+  #scrim { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 40; opacity: 0; transition: opacity .2s; }
+  #scrim.show { opacity: 1; }
+  #scrim[hidden] { display: none; }
+  #drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(320px, 88vw); z-index: 41; background: #11131a; border-left: 1px solid var(--line);
+    box-shadow: -20px 0 50px rgba(0,0,0,.5); padding: 14px; display: flex; flex-direction: column; gap: 8px; transform: translateX(105%); transition: transform .22s ease; visibility: hidden; }
+  #drawer.open { transform: none; visibility: visible; }
+  .dhead { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 10px; font-size: 15px; }
+  .ditem { display: flex; align-items: center; gap: 14px; text-align: left; width: 100%; padding: 13px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font: inherit; cursor: pointer; }
+  .ditem:hover { background: var(--panel-hi); }
+  .ditem > svg { width: 22px; height: 22px; flex: none; color: var(--dim); }
+  .ditem span:not(.dot) { display: grid; gap: 2px; flex: 1; min-width: 0; }
+  .ditem b { font-weight: 600; font-size: 14px; }
+  .ditem small { color: var(--dim); font-size: 12px; }
+  .ditem select { flex: none; width: auto; max-width: 130px; padding: 6px 8px; }
+  @media (prefers-reduced-motion: reduce) { #drawer, #scrim { transition: none; } }
+  @media (max-width: 640px) {
+    .stage.novid { aspect-ratio: auto; min-height: 330px; }
+    .stage.novid canvas#screen { display: none; }
+    .stage.novid .novideo { position: relative; min-height: 330px; padding: 18px 14px; }
+    .nvart { width: 92px; height: 92px; margin-bottom: 4px; }
+    .novideo h3.nvnow { font-size: 24px; }
+  }
+  [hidden] { display: none !important; }
+  .brand[role=button] { cursor: pointer; }
+  #auth { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 20px; overflow: auto;
+    background: radial-gradient(70% 60% at 50% 30%, #171a23, #07080b); }
+  #auth[hidden], .wrap[hidden] { display: none; }
+  .authcard { width: min(420px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 26px 24px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6); display: grid; gap: 12px; }
+  .authcard .brand { justify-content: center; font-size: 22px; margin-bottom: 4px; }
+  .authcard h1 { font-size: 18px; text-align: center; font-weight: 650; }
+  .authcard p.hint { text-align: center; }
+  .authcard form { display: grid; gap: 12px; }
+  .authcard label { display: grid; gap: 6px; font-size: 13px; color: var(--dim); }
+  .authcard label.check { display: flex; align-items: center; gap: 8px; }
+  .authcard .btn.primary { padding: 11px; font-weight: 600; justify-content: center; }
+  .authcard .authlang { justify-self: center; }
+  .authcard .authlang select { width: auto; }
+  .pwrules { margin: 0; padding-left: 18px; color: var(--dim); font-size: 12px; line-height: 1.5; }
+  .pwrules li.ok { color: var(--ok); }
+  .who { display: flex; align-items: center; gap: 12px; padding: 4px 4px 10px; }
+  .who .av { width: 38px; height: 38px; border-radius: 50%; background: rgba(110,168,255,.2); display: grid; place-items: center; font-weight: 700; text-transform: uppercase; }
+  .who small { display: block; color: var(--dim); font-size: 12px; }
+  .ditem.danger { color: var(--bad); }
+  #usersDlg, #pwDlg { width: min(560px, 94vw); }
+  #userList, #tokList { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 8px; }
+  #userList li, #tokList li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 9px 11px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+  #userList .nm, #tokList .nm { font-weight: 600; flex: 1; min-width: 100px; }
+  #userList .off { opacity: .55; }
+  #userList select { width: auto; padding: 5px 8px; }
+  #userList .btn, #tokList .btn { padding: 5px 9px; font-size: 12px; }
+  #tokNew { margin: 6px 0 10px; padding: 10px 12px; border: 1px dashed var(--ok); border-radius: 12px; font-size: 12px; word-break: break-all; }
+  #tokNew code { display: block; margin-top: 6px; color: #fff; user-select: all; }
+  .wallempty { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--dim); display: grid; gap: 10px; justify-items: center; }
+  .wallempty h3 { color: var(--text); font-size: 20px; }
+  .wallempty .btns { display: flex; gap: 10px; margin-top: 8px; }
+  .wallempty[hidden] { display: none; }
+  .btn.icon { padding: 8px 10px; display: inline-flex; align-items: center; }
+  #allDlg { width: min(440px, 94vw); }
+  #allDlg .big { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  #allDlg .big .btn { padding: 14px; font-size: 14px; font-weight: 600; }
+  #allList { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; font-size: 12.5px; }
+  #allList li { display: flex; gap: 8px; align-items: baseline; color: var(--dim); }
+  #allList .nm { color: var(--text); font-weight: 600; }
+  #allList .ok { color: var(--ok); } #allList .bad { color: var(--bad); }
   #scanDlg { width: min(520px, 94vw); }
   #scanList { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; max-height: 44vh; overflow: auto; }
   #scanList li { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
@@ -257,9 +362,34 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+<div id="auth" hidden>
+  <div class="authcard">
+    <div class="brand"><svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="4" y="6" width="24" height="16" rx="4"/><path d="M11 27h10"/></svg>TVHub</div>
+    <form id="setupForm" autocomplete="on" hidden>
+      <h1>Crea el primer usuario</h1>
+      <p class="hint">Será el administrador. Hasta que exista, nadie puede usar TVHub. El código de configuración aparece una sola vez en el registro del contenedor: <code>docker compose logs tvhub</code>.</p>
+      <label>Código de configuración<input type="text" id="suCode" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX"></label>
+      <label>Usuario<input type="text" id="suUser" autocomplete="username" spellcheck="false" maxlength="32" placeholder="admin"></label>
+      <label>Contraseña<input type="password" id="suPass" autocomplete="new-password" maxlength="128"></label>
+      <label>Repite la contraseña<input type="password" id="suPass2" autocomplete="new-password" maxlength="128"></label>
+      <ul class="pwrules"><li id="ruleLen">Al menos 12 caracteres (mejor una frase larga)</li><li id="ruleMatch">Las dos contraseñas coinciden</li></ul>
+      <p id="suErr" class="err" role="alert"></p>
+      <button type="submit" class="btn primary" id="suGo">Crear administrador</button>
+    </form>
+    <form id="loginForm" autocomplete="on" hidden>
+      <h1>Iniciar sesión</h1>
+      <label>Usuario<input type="text" id="liUser" autocomplete="username" spellcheck="false" maxlength="64"></label>
+      <label>Contraseña<input type="password" id="liPass" autocomplete="current-password" maxlength="1024"></label>
+      <label class="check"><input type="checkbox" id="liRemember"> Mantener la sesión iniciada en este equipo</label>
+      <p id="liErr" class="err" role="alert"></p>
+      <button type="submit" class="btn primary" id="liGo">Entrar</button>
+    </form>
+    <label class="authlang"><select id="authLang" aria-label="Idioma"></select></label>
+  </div>
+</div>
+<div class="wrap" hidden>
   <header>
-    <div class="brand">
+    <div class="brand" id="brand" role="button" tabindex="0" title="Pared de TVs">
       <svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="4" y="6" width="24" height="16" rx="4"/><path d="M11 27h10"/></svg>
       TVHub
     </div>
@@ -268,10 +398,41 @@
     <button class="btn" id="btnScan" title="Buscar TVs en mi red">Buscar</button>
     <button class="btn" id="btnWall" title="Ver todas las TVs a la vez (W)" aria-pressed="false">Pared</button>
     <div class="spacer"></div>
+    <button class="btn icon" id="btnAll" title="Encender o apagar todas las TVs" aria-label="Encender o apagar todas las TVs"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1011.4 0"/></svg></button>
     <div class="pill" id="statusPill"><span class="dot" id="dot"></span><span id="statusText">Conectando…</span></div>
-    <button class="btn" id="btnHA" title="Conectar con Home Assistant (MQTT)"><span class="dot" id="haDot"></span> Home Assistant</button>
-    <button class="btn" id="btnEdit" title="Ajustes de esta TV" aria-label="Ajustes de esta TV">Ajustes</button>
+    <button class="btn icon" id="btnMenu" title="Menú" aria-label="Menú" aria-haspopup="dialog" aria-expanded="false" aria-controls="drawer"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </header>
+  <div id="scrim" hidden></div>
+  <aside id="drawer" role="dialog" aria-label="Menú" aria-hidden="true" inert>
+    <div class="who"><span class="av" id="whoAv"></span><span><b id="whoName"></b><small id="whoRole"></small></span></div>
+    <div class="dhead"><b>Menú</b><button class="icon-btn" id="btnMenuClose" aria-label="Cerrar menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <button class="ditem" id="btnEdit" title="Ajustes de esta TV">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+      <span><b id="editLabel">Ajustes</b><small>Nombre, IP, HDMI, emparejar…</small></span>
+    </button>
+    <button class="ditem" id="btnHA" title="Conectar con Home Assistant (MQTT)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+      <span><b>Home Assistant</b><small>Integración por MQTT</small></span>
+      <span class="dot" id="haDot"></span>
+    </button>
+    <button class="ditem" id="btnUsers" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 010 5.6M18 14.4c1.8.8 3 2.7 3 5.6"/></svg>
+      <span><b>Usuarios</b><small>Cuentas, roles y tokens de API</small></span>
+    </button>
+    <button class="ditem" id="btnPw">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>
+      <span><b>Cambiar contraseña</b></span>
+    </button>
+    <label class="ditem" for="langSel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 4 5.6 4 9s-1.4 6.4-4 9c-2.6-2.6-4-5.6-4-9s1.4-6.4 4-9z"/></svg>
+      <span><b>Idioma</b></span>
+      <select id="langSel" aria-label="Idioma"></select>
+    </label>
+    <button class="ditem danger" id="btnLogout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H6a2 2 0 00-2 2v12a2 2 0 002 2h4"/><path d="M15 8l4 4-4 4M19 12H9"/></svg>
+      <span><b>Cerrar sesión</b></span>
+    </button>
+  </aside>
 
   <section id="wall" hidden aria-label="Todas las TVs"></section>
 
@@ -281,14 +442,30 @@
         <div class="stage" id="stage">
           <canvas id="screen" width="1280" height="720"></canvas>
           <div class="novideo" id="noVideo" hidden>
-            <svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="6" width="24" height="16" rx="4"/><path d="M11 27h10"/></svg>
-            <h3 id="nvName">TV</h3><p id="nvState"></p><div class="vol" id="nvVol"></div><p id="nvNote">Esta TV no permite ver su pantalla. El control funciona igual.</p>
+            <div class="nvcard">
+              <div class="nvart">
+                <img class="nvlogo" id="nvLogo" alt="" hidden>
+                <svg id="nvIcon" viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="6" width="24" height="16" rx="4"/><path d="M11 27h10"/></svg>
+              </div>
+              <div class="nvlabel">Ahora en la TV</div>
+              <h3 class="nvnow" id="nvApp"></h3>
+              <div class="nvsub"><span class="dot" id="nvDot"></span><span id="nvName">TV</span><span class="sep">·</span><span id="nvState"></span></div>
+              <div class="nvvol" id="nvVolBox">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 9a4 4 0 010 6"/></svg>
+                <div class="bar"><i id="nvBar"></i></div><b class="vol" id="nvVol"></b>
+              </div>
+              <button type="button" class="btn primary" id="btnLive" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;margin-right:6px;vertical-align:-3px"><rect x="3" y="5" width="18" height="12" rx="2.5"/><path d="M9 21h6"/></svg>Ver en vivo</button>
+              <p id="nvNote">Esta TV no envía imagen · el mando funciona igual</p>
+            </div>
           </div>
           <div class="overlay" id="overlay"><div><h3 id="ovTitle">Conectando a la TV…</h3><p id="ovMsg">Un momento.</p></div></div>
           <div class="hud"><span id="hudMode">—</span><span id="hudFps">0 fps</span><span id="hudRes">—</span></div>
           <div class="stage-tools">
             <button class="icon-btn" id="btnShot" title="Guardar captura (S)" aria-label="Guardar captura">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            </button>
+            <button class="icon-btn" id="btnCard" title="Volver a la ficha de la TV" aria-label="Volver a la ficha de la TV">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="3"/><path d="M8 10h8M8 14h5"/></svg>
             </button>
             <button class="icon-btn" id="btnFull" title="Pantalla completa (F)" aria-label="Pantalla completa">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
@@ -315,6 +492,13 @@
         <button class="right" data-k="DPAD_RIGHT" aria-label="Derecha"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
         <button class="down" data-k="DPAD_DOWN" aria-label="Abajo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
       </div>
+
+      <div class="row c2" id="powerRow">
+        <button class="key" id="btnOn" title="Encender esta TV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1011.4 0"/></svg>Encender</button>
+        <button class="key" id="btnOff" title="Apagar esta TV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1011.4 0"/></svg>Apagar</button>
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="Entrada de vídeo"></div>
+      <button class="btn" id="btnShow" hidden></button>
 
       <div class="row c3">
         <button class="key" data-k="BACK"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 010 0 6 6 0 016 6v1"/></svg>Atrás</button>
@@ -348,6 +532,38 @@
     </aside>
   </main>
 </div>
+<dialog id="pwDlg">
+  <form id="pwForm" autocomplete="off">
+    <h2 id="pwTitle">Cambiar contraseña</h2>
+    <p class="hint" id="pwHint">Al cambiarla se cierran tus otras sesiones.</p>
+    <label id="pwCurRow">Contraseña actual<input type="password" id="pwCur" autocomplete="current-password" maxlength="1024"></label>
+    <label>Contraseña nueva<input type="password" id="pwNew" autocomplete="new-password" maxlength="128"></label>
+    <label>Repite la contraseña nueva<input type="password" id="pwNew2" autocomplete="new-password" maxlength="128"></label>
+    <p class="hint">Al menos 12 caracteres; no puede ser una contraseña común ni contener el usuario.</p>
+    <p id="pwErr" class="err" role="alert"></p>
+    <div class="actions"><span class="spacer"></span><button type="button" class="btn" id="pwCancel">Cancelar</button><button type="submit" class="btn primary" id="pwGo">Guardar</button></div>
+  </form>
+</dialog>
+<dialog id="usersDlg">
+  <form method="dialog" id="usersForm" autocomplete="off">
+    <h2>Usuarios</h2>
+    <ul id="userList"></ul>
+    <h3>Añadir usuario</h3>
+    <div class="two" style="grid-template-columns: 1fr 1.3fr">
+      <label>Usuario<input type="text" id="nuUser" autocomplete="off" spellcheck="false" maxlength="32"></label>
+      <label>Rol<select id="nuRole"><option value="user">Usuario (controla las TVs)</option><option value="admin">Administrador</option></select></label>
+    </div>
+    <label>Contraseña inicial<input type="password" id="nuPass" autocomplete="new-password" maxlength="128"></label>
+    <div class="actions"><span class="spacer"></span><button type="button" class="btn primary" id="nuAdd">Añadir usuario</button></div>
+    <h3>Tokens de API</h3>
+    <p class="hint">Para integraciones como Home Assistant: la usan en lugar de un usuario y solo pueden controlar las TVs. El token se muestra una única vez.</p>
+    <ul id="tokList"></ul>
+    <div class="two"><label>Nombre del token<input type="text" id="tkName" autocomplete="off" maxlength="40" placeholder="Home Assistant"></label><div class="line" style="align-self:end"><button type="button" class="btn" id="tkAdd">Crear token</button></div></div>
+    <div id="tokNew" hidden></div>
+    <p id="usersErr" class="err" role="alert"></p>
+    <div class="actions"><span class="spacer"></span><button type="button" class="btn" id="usersClose">Cerrar</button></div>
+  </form>
+</dialog>
 <dialog id="haDlg">
   <form id="haForm" autocomplete="off">
     <h2>Home Assistant (MQTT)</h2>
@@ -375,6 +591,19 @@
       <button type="button" class="btn" id="haCancel">Cerrar</button>
       <button type="submit" class="btn primary" id="haSave">Guardar y conectar</button>
     </div>
+  </form>
+</dialog>
+<dialog id="allDlg">
+  <form method="dialog" id="allForm">
+    <h2>Todas las TVs</h2>
+    <p class="hint">Envía la orden a todas las TVs de la lista a la vez. Para encender hace falta que la TV responda por red (Android con ADB) o tenga su MAC guardada (LG y Hisense, Wake-on-LAN).</p>
+    <div class="big">
+      <button type="button" class="btn primary" id="allOn">Encender todas</button>
+      <button type="button" class="btn danger" id="allOff">Apagar todas</button>
+    </div>
+    <p id="allErr" class="err" role="alert"></p>
+    <ul id="allList"></ul>
+    <div class="actions"><span class="spacer"></span><button type="button" class="btn" id="allClose">Cerrar</button></div>
   </form>
 </dialog>
 <dialog id="scanDlg">
@@ -417,6 +646,10 @@
       <select id="fVia"></select>
       <small id="viaHelp">Los Fire Stick no controlan el volumen de la TV: elige aquí la TV (Hisense o LG) a la que está conectado.</small>
     </label>
+    <label>HDMI de la TV donde está conectado <small>(para «Mostrar en la TV»)</small>
+      <select id="fHdmi"><option value="0">—</option><option value="1">HDMI 1</option><option value="2">HDMI 2</option><option value="3">HDMI 3</option><option value="4">HDMI 4</option></select>
+    </label>
+    <label class="check" id="tvRow"><input type="checkbox" id="fTv"> Es una Android TV <small>(no un stick): permite cambiar de entrada HDMI</small></label>
     <section id="pairBox" hidden>
       <h3>Emparejar con la TV</h3>
       <p id="pairHelp">Pulsa el botón: la TV mostrará un PIN. Escríbelo aquí.</p>
@@ -442,13 +675,418 @@
 "use strict";
 const $ = (id) => document.getElementById(id);
 const canvas = $("screen"), ctx = canvas.getContext("2d", { alpha: false });
-const QS = location.search;                                   // keeps ?token= on first requests
-const withQ = (u) => u + (QS ? (u.includes("?") ? "&" : "?") + QS.slice(1) : "");
+const withQ = (u) => u;                                       // (kept as a hook; authentication is a session cookie now)
 const store = {
   get(k) { try { return localStorage.getItem(k) || ""; } catch (_) { return ""; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
 };
 
+// ------------------------------------------------------------------ i18n
+// Spanish is the source language: every UI string is its own key; the table maps it to [en, pt, fr, de].
+const LANGS = [["es", "Español"], ["en", "English"], ["pt", "Português"], ["fr", "Français"], ["de", "Deutsch"]];
+const LIDX = { en: 0, pt: 1, fr: 2, de: 3 };
+const I18N = {
+"Tus TVs": ["Your TVs", "Suas TVs", "Vos TV", "Deine TVs"],
+"+ Añadir TV": ["+ Add TV", "+ Adicionar TV", "+ Ajouter une TV", "+ TV hinzufügen"],
+"Buscar TVs en mi red": ["Find TVs on my network", "Procurar TVs na minha rede", "Chercher des TV sur mon réseau", "TVs in meinem Netzwerk suchen"],
+"Buscar": ["Search", "Procurar", "Chercher", "Suchen"],
+"Ver todas las TVs a la vez (W)": ["See all TVs at once (W)", "Ver todas as TVs ao mesmo tempo (W)", "Voir toutes les TV à la fois (W)", "Alle TVs gleichzeitig sehen (W)"],
+"Pared": ["Wall", "Parede", "Mur", "Wand"],
+"Encender o apagar todas las TVs": ["Turn all TVs on or off", "Ligar ou desligar todas as TVs", "Allumer ou éteindre toutes les TV", "Alle TVs ein- oder ausschalten"],
+"Conectando…": ["Connecting…", "Conectando…", "Connexion…", "Verbinde…"],
+"Menú": ["Menu", "Menu", "Menu", "Menü"],
+"Cerrar menú": ["Close menu", "Fechar menu", "Fermer le menu", "Menü schließen"],
+"Ajustes de esta TV": ["Settings for this TV", "Ajustes desta TV", "Réglages de cette TV", "Einstellungen dieses TVs"],
+"Ajustes": ["Settings", "Ajustes", "Réglages", "Einstellungen"],
+"Nombre, IP, HDMI, emparejar…": ["Name, IP, HDMI, pairing…", "Nome, IP, HDMI, emparelhar…", "Nom, IP, HDMI, appairage…", "Name, IP, HDMI, Koppeln…"],
+"Conectar con Home Assistant (MQTT)": ["Connect to Home Assistant (MQTT)", "Conectar ao Home Assistant (MQTT)", "Se connecter à Home Assistant (MQTT)", "Mit Home Assistant verbinden (MQTT)"],
+"Integración por MQTT": ["Integration via MQTT", "Integração via MQTT", "Intégration via MQTT", "Integration über MQTT"],
+"Idioma": ["Language", "Idioma", "Langue", "Sprache"],
+"Todas las TVs": ["All TVs", "Todas as TVs", "Toutes les TV", "Alle TVs"],
+"Ahora en la TV": ["Now on the TV", "Agora na TV", "En ce moment sur la TV", "Jetzt auf dem TV"],
+"Ver en vivo": ["Watch live", "Ver ao vivo", "Voir en direct", "Live ansehen"],
+"Esta TV no envía imagen · el mando funciona igual": ["This TV doesn't send video · the remote works all the same", "Esta TV não envia imagem · o controle funciona igual", "Cette TV n'envoie pas d'image · la télécommande fonctionne quand même", "Dieser TV sendet kein Bild · die Fernbedienung funktioniert trotzdem"],
+"Conectando a la TV…": ["Connecting to the TV…", "Conectando à TV…", "Connexion à la TV…", "Verbindung zum TV…"],
+"Un momento.": ["One moment.", "Um momento.", "Un instant.", "Einen Moment."],
+"Guardar captura (S)": ["Save screenshot (S)", "Salvar captura (S)", "Enregistrer la capture (S)", "Screenshot speichern (S)"],
+"Guardar captura": ["Save screenshot", "Salvar captura", "Enregistrer la capture", "Screenshot speichern"],
+"Volver a la ficha de la TV": ["Back to the TV card", "Voltar à ficha da TV", "Retour à la fiche de la TV", "Zurück zur TV-Karte"],
+"Pantalla completa (F)": ["Full screen (F)", "Tela cheia (F)", "Plein écran (F)", "Vollbild (F)"],
+"Pantalla completa": ["Full screen", "Tela cheia", "Plein écran", "Vollbild"],
+"Calidad": ["Quality", "Qualidade", "Qualité", "Qualität"],
+"480p · ligera": ["480p · light", "480p · leve", "480p · légère", "480p · leicht"],
+"720p · equilibrada": ["720p · balanced", "720p · equilibrada", "720p · équilibrée", "720p · ausgewogen"],
+"1080p · máxima": ["1080p · maximum", "1080p · máxima", "1080p · maximale", "1080p · maximal"],
+"Control remoto": ["Remote control", "Controle remoto", "Télécommande", "Fernbedienung"],
+"Navegación": ["Navigation", "Navegação", "Navigation", "Navigation"],
+"Arriba": ["Up", "Cima", "Haut", "Hoch"],
+"Izquierda": ["Left", "Esquerda", "Gauche", "Links"],
+"Derecha": ["Right", "Direita", "Droite", "Rechts"],
+"Abajo": ["Down", "Baixo", "Bas", "Runter"],
+"Encender esta TV": ["Turn this TV on", "Ligar esta TV", "Allumer cette TV", "Diesen TV einschalten"],
+"Encender": ["Turn on", "Ligar", "Allumer", "Einschalten"],
+"Apagar esta TV": ["Turn this TV off", "Desligar esta TV", "Éteindre cette TV", "Diesen TV ausschalten"],
+"Apagar": ["Turn off", "Desligar", "Éteindre", "Ausschalten"],
+"Entrada de vídeo": ["Video input", "Entrada de vídeo", "Entrée vidéo", "Videoeingang"],
+"Atrás": ["Back", "Voltar", "Retour", "Zurück"],
+"Inicio": ["Home", "Início", "Accueil", "Start"],
+"Retroceder": ["Rewind", "Retroceder", "Reculer", "Zurückspulen"],
+"Avanzar": ["Forward", "Avançar", "Avancer", "Vorspulen"],
+"Escribe aquí y envía a la TV": ["Type here and send to the TV", "Escreva aqui e envie à TV", "Écrivez ici et envoyez à la TV", "Hier tippen und an den TV senden"],
+"Enviar": ["Send", "Enviar", "Envoyer", "Senden"],
+"Teclado en vivo: lo que teclees llega a la TV": ["Live keyboard: what you type goes to the TV", "Teclado ao vivo: o que você digitar vai para a TV", "Clavier en direct : ce que vous tapez arrive sur la TV", "Live-Tastatur: Was du tippst, landet auf dem TV"],
+"mover": ["move", "mover", "déplacer", "bewegen"],
+"atrás": ["back", "voltar", "retour", "zurück"],
+"inicio": ["home", "início", "accueil", "Start"],
+"Espacio": ["Space", "Espaço", "Espace", "Leertaste"],
+"play": ["play", "play", "lecture", "Wiedergabe"],
+"volumen": ["volume", "volume", "volume", "Lautstärke"],
+"pared de TVs": ["TV wall", "parede de TVs", "mur de TV", "TV-Wand"],
+"pantalla completa": ["full screen", "tela cheia", "plein écran", "Vollbild"],
+"captura": ["screenshot", "captura", "capture", "Screenshot"],
+"TVHub publica tus TVs en Home Assistant por MQTT discovery: aparecen solas como dispositivos con botones, apps y sensores. Usa el broker de Home Assistant (add-on Mosquitto).": ["TVHub publishes your TVs to Home Assistant through MQTT discovery: they show up on their own as devices with buttons, apps and sensors. Use the Home Assistant broker (Mosquitto add-on).", "O TVHub publica suas TVs no Home Assistant via MQTT discovery: elas aparecem sozinhas como dispositivos com botões, apps e sensores. Use o broker do Home Assistant (add-on Mosquitto).", "TVHub publie vos TV dans Home Assistant via MQTT discovery : elles apparaissent toutes seules comme appareils avec boutons, apps et capteurs. Utilisez le broker de Home Assistant (add-on Mosquitto).", "TVHub veröffentlicht deine TVs per MQTT-Discovery in Home Assistant: Sie erscheinen von selbst als Geräte mit Tasten, Apps und Sensoren. Nutze den Broker von Home Assistant (Mosquitto-Add-on)."],
+"IP o host del broker": ["Broker IP or host", "IP ou host do broker", "IP ou hôte du broker", "IP oder Host des Brokers"],
+"Puerto": ["Port", "Porta", "Port", "Port"],
+"Usuario": ["User", "Usuário", "Utilisateur", "Benutzer"],
+"Contraseña": ["Password", "Senha", "Mot de passe", "Passwort"],
+"Conexión cifrada (TLS)": ["Encrypted connection (TLS)", "Conexão criptografada (TLS)", "Connexion chiffrée (TLS)", "Verschlüsselte Verbindung (TLS)"],
+"(normalmente puerto 8883)": ["(usually port 8883)", "(normalmente porta 8883)", "(généralement le port 8883)", "(meist Port 8883)"],
+"No verificar el certificado": ["Don't verify the certificate", "Não verificar o certificado", "Ne pas vérifier le certificat", "Zertifikat nicht prüfen"],
+"(certificado propio)": ["(self-signed certificate)", "(certificado próprio)", "(certificat auto-signé)", "(selbstsigniertes Zertifikat)"],
+"Avanzado": ["Advanced", "Avançado", "Avancé", "Erweitert"],
+"Prefijo de TVHub": ["TVHub prefix", "Prefixo do TVHub", "Préfixe TVHub", "TVHub-Präfix"],
+"Sin configurar": ["Not configured", "Não configurado", "Non configuré", "Nicht konfiguriert"],
+"Desactivar": ["Disable", "Desativar", "Désactiver", "Deaktivieren"],
+"Cerrar": ["Close", "Fechar", "Fermer", "Schließen"],
+"Guardar y conectar": ["Save and connect", "Salvar e conectar", "Enregistrer et connecter", "Speichern und verbinden"],
+"Envía la orden a todas las TVs de la lista a la vez. Para encender hace falta que la TV responda por red (Android con ADB) o tenga su MAC guardada (LG y Hisense, Wake-on-LAN).": ["Sends the command to every TV in the list at once. To turn on, the TV must answer over the network (Android with ADB) or have its MAC saved (LG and Hisense, Wake-on-LAN).", "Envia o comando a todas as TVs da lista ao mesmo tempo. Para ligar, a TV precisa responder pela rede (Android com ADB) ou ter o MAC salvo (LG e Hisense, Wake-on-LAN).", "Envoie la commande à toutes les TV de la liste en même temps. Pour allumer, la TV doit répondre sur le réseau (Android avec ADB) ou avoir sa MAC enregistrée (LG et Hisense, Wake-on-LAN).", "Sendet den Befehl gleichzeitig an alle TVs der Liste. Zum Einschalten muss der TV über das Netzwerk antworten (Android mit ADB) oder seine MAC gespeichert haben (LG und Hisense, Wake-on-LAN)."],
+"Encender todas": ["Turn all on", "Ligar todas", "Tout allumer", "Alle einschalten"],
+"Apagar todas": ["Turn all off", "Desligar todas", "Tout éteindre", "Alle ausschalten"],
+"TVHub explora las redes que indiques y detecta LG webOS, Hisense VIDAA y Android TV / Fire TV con ADB activo. También reconoce Roku, Samsung y Chromecast, pero esos todavía no se pueden controlar.": ["TVHub scans the networks you give it and detects LG webOS, Hisense VIDAA and Android TV / Fire TV with ADB enabled. It also recognises Roku, Samsung and Chromecast, but those can't be controlled yet.", "O TVHub explora as redes indicadas e detecta LG webOS, Hisense VIDAA e Android TV / Fire TV com ADB ativo. Também reconhece Roku, Samsung e Chromecast, mas esses ainda não podem ser controlados.", "TVHub explore les réseaux indiqués et détecte LG webOS, Hisense VIDAA et Android TV / Fire TV avec ADB activé. Il reconnaît aussi Roku, Samsung et Chromecast, mais ils ne sont pas encore contrôlables.", "TVHub durchsucht die angegebenen Netzwerke und erkennt LG webOS, Hisense VIDAA und Android TV / Fire TV mit aktiviertem ADB. Roku, Samsung und Chromecast werden ebenfalls erkannt, lassen sich aber noch nicht steuern."],
+"Redes a explorar": ["Networks to scan", "Redes a explorar", "Réseaux à explorer", "Zu durchsuchende Netzwerke"],
+"(separadas por comas; una /24 tarda unos 7 s)": ["(comma-separated; a /24 takes about 7 s)", "(separadas por vírgulas; uma /24 leva uns 7 s)", "(séparés par des virgules ; un /24 prend environ 7 s)", "(durch Kommas getrennt; ein /24 dauert etwa 7 s)"],
+"Explorando…": ["Scanning…", "Explorando…", "Exploration…", "Suche läuft…"],
+"Añadir TV": ["Add TV", "Adicionar TV", "Ajouter une TV", "TV hinzufügen"],
+"Nombre": ["Name", "Nome", "Nom", "Name"],
+"Sala, Cuarto…": ["Living room, Bedroom…", "Sala, Quarto…", "Salon, Chambre…", "Wohnzimmer, Schlafzimmer…"],
+"Tipo": ["Type", "Tipo", "Type", "Typ"],
+"LG webOS (red local)": ["LG webOS (local network)", "LG webOS (rede local)", "LG webOS (réseau local)", "LG webOS (lokales Netzwerk)"],
+"IP de la TV": ["TV IP", "IP da TV", "IP de la TV", "IP des TVs"],
+"MAC de la TV": ["TV MAC", "MAC da TV", "MAC de la TV", "MAC des TVs"],
+"(solo TVs recientes; opcional)": ["(recent TVs only; optional)", "(só TVs recentes; opcional)", "(TV récentes uniquement ; facultatif)", "(nur neuere TVs; optional)"],
+"(opcional; solo para encenderla)": ["(optional; only to turn it on)", "(opcional; só para ligá-la)", "(facultatif ; uniquement pour l'allumer)", "(optional; nur zum Einschalten)"],
+"Conexión cifrada": ["Encrypted connection", "Conexão criptografada", "Connexion chiffrée", "Verschlüsselte Verbindung"],
+"(desmárcala en modelos antiguos)": ["(untick for older models)", "(desmarque em modelos antigos)", "(décochez pour les anciens modèles)", "(bei älteren Modellen abwählen)"],
+"Enviar el volumen a": ["Send the volume to", "Enviar o volume para", "Envoyer le volume à", "Lautstärke senden an"],
+"Los Fire Stick no controlan el volumen de la TV: elige aquí la TV (Hisense o LG) a la que está conectado.": ["Fire Sticks can't control the TV's volume: choose here the TV (Hisense or LG) it is plugged into.", "Os Fire Stick não controlam o volume da TV: escolha aqui a TV (Hisense ou LG) à qual está conectado.", "Les Fire Stick ne contrôlent pas le volume de la TV : choisissez ici la TV (Hisense ou LG) sur laquelle il est branché.", "Fire Sticks können die Lautstärke des TVs nicht steuern: Wähle hier den TV (Hisense oder LG), an dem er angeschlossen ist."],
+"HDMI de la TV donde está conectado": ["HDMI port of the TV it's plugged into", "HDMI da TV onde está conectado", "HDMI de la TV où il est branché", "HDMI-Anschluss des TVs, an dem er hängt"],
+"(para «Mostrar en la TV»)": ["(for “Show on the TV”)", "(para «Mostrar na TV»)", "(pour « Afficher sur la TV »)", "(für „Auf dem TV anzeigen“)"],
+"Es una Android TV": ["It's an Android TV", "É uma Android TV", "C'est une Android TV", "Es ist ein Android TV"],
+"(no un stick): permite cambiar de entrada HDMI": ["(not a stick): lets you switch HDMI input", "(não um stick): permite trocar a entrada HDMI", "(pas une clé) : permet de changer d'entrée HDMI", "(kein Stick): erlaubt den Wechsel des HDMI-Eingangs"],
+"Emparejar con la TV": ["Pair with the TV", "Emparelhar com a TV", "Appairer avec la TV", "Mit dem TV koppeln"],
+"Pulsa el botón: la TV mostrará un PIN. Escríbelo aquí.": ["Press the button: the TV will show a PIN. Type it here.", "Pressione o botão: a TV mostrará um PIN. Digite-o aqui.", "Appuyez sur le bouton : la TV affichera un code PIN. Saisissez-le ici.", "Drücke die Taste: Der TV zeigt eine PIN an. Gib sie hier ein."],
+"Mostrar PIN en la TV": ["Show PIN on the TV", "Mostrar PIN na TV", "Afficher le PIN sur la TV", "PIN auf dem TV anzeigen"],
+"Emparejar": ["Pair", "Emparelhar", "Appairer", "Koppeln"],
+"Eliminar": ["Delete", "Excluir", "Supprimer", "Löschen"],
+"Cancelar": ["Cancel", "Cancelar", "Annuler", "Abbrechen"],
+"Guardar": ["Save", "Salvar", "Enregistrer", "Speichern"],
+"•••••••• (sin cambios)": ["•••••••• (unchanged)", "•••••••• (sem alterações)", "•••••••• (inchangé)", "•••••••• (unverändert)"],
+"Home Assistant conectado": ["Home Assistant connected", "Home Assistant conectado", "Home Assistant connecté", "Home Assistant verbunden"],
+"Home Assistant desactivado": ["Home Assistant disabled", "Home Assistant desativado", "Home Assistant désactivé", "Home Assistant deaktiviert"],
+"No soportada": ["Not supported", "Não suportada", "Non prise en charge", "Nicht unterstützt"],
+"encendida": ["on", "ligada", "allumée", "eingeschaltet"],
+"apagada": ["off", "desligada", "éteinte", "ausgeschaltet"],
+"Conectando a {0}:{1}…": ["Connecting to {0}:{1}…", "Conectando a {0}:{1}…", "Connexion à {0}:{1}…", "Verbinde mit {0}:{1}…"],
+"Home Assistant: {0}": ["Home Assistant: {0}", "Home Assistant: {0}", "Home Assistant : {0}", "Home Assistant: {0}"],
+"Conectada": ["Connected", "Conectada", "Connectée", "Verbunden"],
+"Sin conexión": ["Disconnected", "Sem conexão", "Hors connexion", "Keine Verbindung"],
+"Acepta el aviso en la TV": ["Accept the prompt on the TV", "Aceite o aviso na TV", "Acceptez l'invite sur la TV", "Bestätige die Meldung am TV"],
+"Falta emparejar (Ajustes → Emparejar)": ["Needs pairing (Settings → Pair)", "Falta emparelhar (Ajustes → Emparelhar)", "Appairage requis (Réglages → Appairer)", "Kopplung nötig (Einstellungen → Koppeln)"],
+"Sin IP": ["No IP", "Sem IP", "Sans IP", "Keine IP"],
+"tecla {0}": ["key {0}", "tecla {0}", "touche {0}", "Taste {0}"],
+"Sin TVs": ["No TVs", "Sem TVs", "Aucune TV", "Keine TVs"],
+"Añade tu primera TV": ["Add your first TV", "Adicione sua primeira TV", "Ajoutez votre première TV", "Füge deinen ersten TV hinzu"],
+"Pulsa «Buscar» para encontrarlas en tu red, o «+ Añadir TV» si ya sabes su IP. En Android hace falta la depuración ADB activada.": ["Press “Search” to find them on your network, or “+ Add TV” if you already know its IP. On Android, ADB debugging must be enabled.", "Pressione «Procurar» para encontrá-las na sua rede, ou «+ Adicionar TV» se já souber o IP. No Android é preciso ativar a depuração ADB.", "Appuyez sur « Chercher » pour les trouver sur votre réseau, ou sur « + Ajouter une TV » si vous connaissez son IP. Sous Android, le débogage ADB doit être activé.", "Tippe auf „Suchen“, um sie in deinem Netzwerk zu finden, oder auf „+ TV hinzufügen“, wenn du die IP kennst. Unter Android muss das ADB-Debugging aktiv sein."],
+"Esperando imagen…": ["Waiting for video…", "Aguardando imagem…", "En attente de l'image…", "Warte auf Bild…"],
+"Si la pantalla de la TV no cambia, mueve el cursor con las flechas.": ["If the TV screen doesn't change, move the cursor with the arrow keys.", "Se a tela da TV não mudar, mova o cursor com as setas.", "Si l'écran de la TV ne change pas, déplacez le curseur avec les flèches.", "Wenn sich der TV-Bildschirm nicht ändert, bewege den Cursor mit den Pfeiltasten."],
+"Autoriza la depuración USB": ["Authorise USB debugging", "Autorize a depuração USB", "Autorisez le débogage USB", "USB-Debugging erlauben"],
+"En la TV aparece «¿Permitir depuración USB?». Marca «Permitir siempre» y acepta.": ["The TV shows “Allow USB debugging?”. Tick “Always allow” and accept.", "Na TV aparece «Permitir depuração USB?». Marque «Permitir sempre» e aceite.", "La TV affiche « Autoriser le débogage USB ? ». Cochez « Toujours autoriser » et acceptez.", "Am TV erscheint „USB-Debugging zulassen?“. Wähle „Immer zulassen“ und bestätige."],
+"No llego a la TV": ["Can't reach the TV", "No consigo chegar à TV", "Impossible de joindre la TV", "TV nicht erreichbar"],
+"Comprueba que está encendida (no en reposo), que la IP es correcta y que la depuración ADB está activa.": ["Check that it's on (not in standby), that the IP is correct and that ADB debugging is enabled.", "Verifique se está ligada (não em repouso), se o IP está correto e se a depuração ADB está ativa.", "Vérifiez qu'elle est allumée (pas en veille), que l'IP est correcte et que le débogage ADB est activé.", "Prüfe, ob er eingeschaltet ist (nicht im Standby), die IP stimmt und das ADB-Debugging aktiv ist."],
+"Entrada: {0}": ["Input: {0}", "Entrada: {0}", "Entrée : {0}", "Eingang: {0}"],
+"No se pudo cambiar de entrada": ["Couldn't change input", "Não foi possível trocar de entrada", "Impossible de changer d'entrée", "Eingang konnte nicht gewechselt werden"],
+"No se pudo": ["Couldn't do it", "Não foi possível", "Impossible", "Nicht möglich"],
+"No se pudo contactar con el servidor": ["Couldn't reach the server", "Não foi possível contatar o servidor", "Impossible de joindre le serveur", "Server nicht erreichbar"],
+"Encendiendo {0}…": ["Turning {0} on…", "Ligando {0}…", "Allumage de {0}…", "{0} wird eingeschaltet…"],
+"Apagando {0}…": ["Turning {0} off…", "Desligando {0}…", "Extinction de {0}…", "{0} wird ausgeschaltet…"],
+"{0}: encendida": ["{0}: on", "{0}: ligada", "{0} : allumée", "{0}: eingeschaltet"],
+"{0}: apagada": ["{0}: off", "{0}: desligada", "{0} : éteinte", "{0}: ausgeschaltet"],
+"no respondió": ["didn't respond", "não respondeu", "n'a pas répondu", "keine Antwort"],
+"Cambiando la entrada de la TV…": ["Switching the TV input…", "Trocando a entrada da TV…", "Changement de l'entrée de la TV…", "TV-Eingang wird gewechselt…"],
+"No se pudo cambiar la entrada": ["Couldn't switch the input", "Não foi possível trocar a entrada", "Impossible de changer l'entrée", "Eingang konnte nicht gewechselt werden"],
+"Mostrar en {0} (HDMI {1})": ["Show on {0} (HDMI {1})", "Mostrar em {0} (HDMI {1})", "Afficher sur {0} (HDMI {1})", "Auf {0} anzeigen (HDMI {1})"],
+"Se envía a {0}": ["Sent to {0}", "Enviado para {0}", "Envoyé à {0}", "Wird an {0} gesendet"],
+"Ajustes de {0}": ["Settings for {0}", "Ajustes de {0}", "Réglages de {0}", "Einstellungen für {0}"],
+"Abriendo {0}…": ["Opening {0}…", "Abrindo {0}…", "Ouverture de {0}…", "{0} wird geöffnet…"],
+"Teclado en vivo ACTIVO · Esc para salir": ["Live keyboard ON · Esc to exit", "Teclado ao vivo ATIVO · Esc para sair", "Clavier en direct ACTIF · Échap pour quitter", "Live-Tastatur AKTIV · Esc zum Beenden"],
+"Escribe: cada tecla va a la TV": ["Type: every key goes to the TV", "Digite: cada tecla vai para a TV", "Tapez : chaque touche va vers la TV", "Tippe: Jede Taste geht an den TV"],
+"Guardando captura…": ["Saving screenshot…", "Salvando captura…", "Enregistrement de la capture…", "Screenshot wird gespeichert…"],
+"Esta misma TV": ["This same TV", "Esta mesma TV", "Cette même TV", "Dieser TV selbst"],
+"Pulsa el botón y acepta el aviso que aparece en la TV (tienes 30 segundos).": ["Press the button and accept the prompt on the TV (you have 30 seconds).", "Pressione o botão e aceite o aviso na TV (você tem 30 segundos).", "Appuyez sur le bouton et acceptez l'invite affichée sur la TV (vous avez 30 secondes).", "Drücke die Taste und bestätige die Meldung am TV (du hast 30 Sekunden)."],
+"No se pudo guardar": ["Couldn't save", "Não foi possível salvar", "Impossible d'enregistrer", "Speichern nicht möglich"],
+"Guardado": ["Saved", "Salvo", "Enregistré", "Gespeichert"],
+"TV añadida": ["TV added", "TV adicionada", "TV ajoutée", "TV hinzugefügt"],
+"¿Eliminar «{0}» de TVHub? (No se toca la TV.)": ["Remove “{0}” from TVHub? (The TV itself isn't touched.)", "Excluir «{0}» do TVHub? (A TV não é alterada.)", "Supprimer « {0} » de TVHub ? (La TV n'est pas modifiée.)", "„{0}“ aus TVHub entfernen? (Der TV selbst bleibt unberührt.)"],
+"Acepta el aviso en la TV…": ["Accept the prompt on the TV…", "Aceite o aviso na TV…", "Acceptez l'invite sur la TV…", "Bestätige die Meldung am TV…"],
+"Sin datos": ["No data", "Sem dados", "Pas de données", "Keine Daten"],
+"Falta la librería paho-mqtt en el servidor": ["The paho-mqtt library is missing on the server", "Falta a biblioteca paho-mqtt no servidor", "La bibliothèque paho-mqtt manque sur le serveur", "Die Bibliothek paho-mqtt fehlt auf dem Server"],
+"Desactivado": ["Disabled", "Desativado", "Désactivé", "Deaktiviert"],
+"Conectado a {0}:{1}": ["Connected to {0}:{1}", "Conectado a {0}:{1}", "Connecté à {0}:{1}", "Verbunden mit {0}:{1}"],
+"Encender / apagar": ["Turn on / off", "Ligar / desligar", "Allumer / éteindre", "Ein- / ausschalten"],
+"Volumen {0}": ["Volume {0}", "Volume {0}", "Volume {0}", "Lautstärke {0}"],
+"🔇 mute": ["🔇 muted", "🔇 mudo", "🔇 muet", "🔇 stumm"],
+"Cargando captura…": ["Loading screenshot…", "Carregando captura…", "Chargement de la capture…", "Screenshot wird geladen…"],
+"Apagar {0}": ["Turn off {0}", "Desligar {0}", "Éteindre {0}", "{0} ausschalten"],
+"Encender {0}": ["Turn on {0}", "Ligar {0}", "Allumer {0}", "{0} einschalten"],
+"Clic en una TV para abrirla con imagen en vivo · teclas 1-9 · W o Esc para volver.": ["Click a TV to open it with live video · keys 1-9 · W or Esc to go back.", "Clique em uma TV para abri-la com imagem ao vivo · teclas 1-9 · W ou Esc para voltar.", "Cliquez sur une TV pour l'ouvrir en direct · touches 1-9 · W ou Échap pour revenir.", "Klicke auf einen TV, um ihn live zu öffnen · Tasten 1-9 · W oder Esc zum Zurückkehren."],
+"¿Apagar todas las TVs?": ["Turn off all TVs?", "Desligar todas as TVs?", "Éteindre toutes les TV ?", "Alle TVs ausschalten?"],
+"No se pudo enviar": ["Couldn't send", "Não foi possível enviar", "Impossible d'envoyer", "Senden nicht möglich"],
+"No hay TVs en la lista.": ["There are no TVs in the list.", "Não há TVs na lista.", "Il n'y a aucune TV dans la liste.", "Die Liste enthält keine TVs."],
+"Encendiendo {0} TV(s)": ["Turning on {0} TV(s)", "Ligando {0} TV(s)", "Allumage de {0} TV", "{0} TV(s) werden eingeschaltet"],
+"Apagando {0} TV(s)": ["Turning off {0} TV(s)", "Desligando {0} TV(s)", "Extinction de {0} TV", "{0} TV(s) werden ausgeschaltet"],
+"Ya añadida": ["Already added", "Já adicionada", "Déjà ajoutée", "Bereits hinzugefügt"],
+"Añadir": ["Add", "Adicionar", "Ajouter", "Hinzufügen"],
+"No se pudo añadir": ["Couldn't add", "Não foi possível adicionar", "Impossible d'ajouter", "Hinzufügen nicht möglich"],
+"Añadida ✓": ["Added ✓", "Adicionada ✓", "Ajoutée ✓", "Hinzugefügt ✓"],
+"No se pudo buscar": ["Couldn't search", "Não foi possível procurar", "Impossible de chercher", "Suche nicht möglich"],
+"{0} dispositivo(s) en {1} direcciones ({2} s). Si falta tu TV: enciéndela, activa ADB / el control por red y repite.": ["{0} device(s) in {1} addresses ({2} s). If your TV is missing: turn it on, enable ADB / network control and try again.", "{0} dispositivo(s) em {1} endereços ({2} s). Se faltar sua TV: ligue-a, ative o ADB / controle por rede e repita.", "{0} appareil(s) sur {1} adresses ({2} s). S'il manque votre TV : allumez-la, activez ADB / le contrôle réseau et recommencez.", "{0} Gerät(e) in {1} Adressen ({2} s). Fehlt dein TV: einschalten, ADB / Netzwerksteuerung aktivieren und erneut suchen."],
+"No se encontró ninguna TV en {0} direcciones. Comprueba que está encendida, en esa red y con ADB o el control por red activado.": ["No TV found in {0} addresses. Check that it's on, on that network and with ADB or network control enabled.", "Nenhuma TV encontrada em {0} endereços. Verifique se está ligada, nessa rede e com ADB ou controle por rede ativado.", "Aucune TV trouvée sur {0} adresses. Vérifiez qu'elle est allumée, sur ce réseau et avec ADB ou le contrôle réseau activé.", "Kein TV in {0} Adressen gefunden. Prüfe, ob er eingeschaltet ist, in diesem Netzwerk hängt und ADB bzw. Netzwerksteuerung aktiv ist."],
+"Entrada no válida": ["Invalid input", "Entrada inválida", "Entrée non valide", "Ungültiger Eingang"],
+"La TV no está conectada": ["The TV isn't connected", "A TV não está conectada", "La TV n'est pas connectée", "Der TV ist nicht verbunden"],
+"La TV no aceptó el cambio de entrada": ["The TV didn't accept the input change", "A TV não aceitou a troca de entrada", "La TV n'a pas accepté le changement d'entrée", "Der TV hat den Eingangswechsel nicht akzeptiert"],
+"Tipo de TV no válido": ["Invalid TV type", "Tipo de TV inválido", "Type de TV non valide", "Ungültiger TV-Typ"],
+"IP o nombre de host no válido": ["Invalid IP or host name", "IP ou nome de host inválido", "IP ou nom d'hôte non valide", "Ungültige IP oder ungültiger Hostname"],
+"Puerto no válido": ["Invalid port", "Porta inválida", "Port non valide", "Ungültiger Port"],
+"MAC no válida (formato AA:BB:CC:DD:EE:FF)": ["Invalid MAC (format AA:BB:CC:DD:EE:FF)", "MAC inválido (formato AA:BB:CC:DD:EE:FF)", "MAC non valide (format AA:BB:CC:DD:EE:FF)", "Ungültige MAC (Format AA:BB:CC:DD:EE:FF)"],
+"Entrada HDMI no válida": ["Invalid HDMI input", "Entrada HDMI inválida", "Entrée HDMI non valide", "Ungültiger HDMI-Eingang"],
+"Redes no válidas": ["Invalid networks", "Redes inválidas", "Réseaux non valides", "Ungültige Netzwerke"],
+"Red no válida: {0}": ["Invalid network: {0}", "Rede inválida: {0}", "Réseau non valide : {0}", "Ungültiges Netzwerk: {0}"],
+"Ya hay una búsqueda en curso": ["A search is already running", "Já há uma busca em andamento", "Une recherche est déjà en cours", "Es läuft bereits eine Suche"],
+"Indica al menos una red, por ejemplo 192.168.1.0/24": ["Give at least one network, e.g. 192.168.1.0/24", "Indique pelo menos uma rede, por exemplo 192.168.1.0/24", "Indiquez au moins un réseau, par exemple 192.168.1.0/24", "Gib mindestens ein Netzwerk an, z. B. 192.168.1.0/24"],
+"Falta la librería vidaa-control en el servidor": ["The vidaa-control library is missing on the server", "Falta a biblioteca vidaa-control no servidor", "La bibliothèque vidaa-control manque sur le serveur", "Die Bibliothek vidaa-control fehlt auf dem Server"],
+"Falta la librería aiowebostv en el servidor": ["The aiowebostv library is missing on the server", "Falta a biblioteca aiowebostv no servidor", "La bibliothèque aiowebostv manque sur le serveur", "Die Bibliothek aiowebostv fehlt auf dem Server"],
+"No se puede cambiar el tipo; borra y vuelve a añadir": ["The type can't be changed; delete and add again", "Não é possível mudar o tipo; exclua e adicione de novo", "Le type ne peut pas être modifié ; supprimez et ajoutez à nouveau", "Der Typ lässt sich nicht ändern; löschen und neu hinzufügen"],
+"Nivel no válido": ["Invalid level", "Nível inválido", "Niveau non valide", "Ungültiger Pegel"],
+"ADB no responde (¿en reposo profundo o sin red?)": ["ADB isn't responding (deep sleep or no network?)", "O ADB não responde (repouso profundo ou sem rede?)", "ADB ne répond pas (veille profonde ou pas de réseau ?)", "ADB antwortet nicht (Tiefschlaf oder kein Netz?)"],
+"no se puede encender sin su MAC (Wake-on-LAN); añádela en Ajustes": ["can't be turned on without its MAC (Wake-on-LAN); add it in Settings", "não é possível ligar sem o MAC (Wake-on-LAN); adicione-o em Ajustes", "impossible de l'allumer sans sa MAC (Wake-on-LAN) ; ajoutez-la dans Réglages", "ohne MAC (Wake-on-LAN) nicht einschaltbar; in den Einstellungen eintragen"],
+"ya estaba apagada o sin conexión": ["was already off or offline", "já estava desligada ou sem conexão", "était déjà éteinte ou hors ligne", "war schon aus oder offline"],
+"ya estaba encendida": ["was already on", "já estava ligada", "était déjà allumée", "war schon an"],
+"Wake-on-LAN enviado; tarda unos segundos": ["Wake-on-LAN sent; it takes a few seconds", "Wake-on-LAN enviado; leva alguns segundos", "Wake-on-LAN envoyé ; cela prend quelques secondes", "Wake-on-LAN gesendet; dauert einige Sekunden"],
+"la TV no respondió a tiempo": ["the TV didn't respond in time", "a TV não respondeu a tempo", "la TV n'a pas répondu à temps", "der TV hat nicht rechtzeitig geantwortet"],
+"Indica en Ajustes la TV y el HDMI donde está conectado este dispositivo": ["In Settings, set the TV and HDMI port this device is plugged into", "Indique em Ajustes a TV e o HDMI onde este dispositivo está conectado", "Indiquez dans Réglages la TV et le HDMI où cet appareil est branché", "Lege in den Einstellungen TV und HDMI-Anschluss dieses Geräts fest"],
+"«{0}» no permite cambiar de entrada": ["“{0}” doesn't support switching input", "«{0}» não permite trocar de entrada", "« {0} » ne permet pas de changer d'entrée", "„{0}“ erlaubt keinen Eingangswechsel"],
+"Esta TV no permite cambiar de entrada": ["This TV doesn't support switching input", "Esta TV não permite trocar de entrada", "Cette TV ne permet pas de changer d'entrée", "Dieser TV erlaubt keinen Eingangswechsel"],
+"La TV rechazó la conexión. Si es un modelo reciente, rellena la MAC de la TV en Ajustes, guarda y vuelve a probar.": ["The TV refused the connection. If it's a recent model, fill in the TV's MAC in Settings, save and try again.", "A TV recusou a conexão. Se for um modelo recente, preencha o MAC da TV em Ajustes, salve e tente de novo.", "La TV a refusé la connexion. S'il s'agit d'un modèle récent, renseignez la MAC de la TV dans Réglages, enregistrez et réessayez.", "Der TV hat die Verbindung abgelehnt. Bei einem neueren Modell die MAC des TVs in den Einstellungen eintragen, speichern und erneut versuchen."],
+"No llego a la TV. Comprueba que está encendida, la IP y la casilla de cifrado.": ["Can't reach the TV. Check that it's on, the IP and the encryption box.", "Não consigo chegar à TV. Verifique se está ligada, o IP e a caixa de criptografia.", "Impossible de joindre la TV. Vérifiez qu'elle est allumée, l'IP et la case de chiffrement.", "TV nicht erreichbar. Prüfe, ob er an ist, die IP und das Verschlüsselungs-Kästchen."],
+"No se aceptó el aviso a tiempo o no llego a la TV. Enciéndela, comprueba que «LG Connect Apps» está activo en su red y vuelve a intentarlo.": ["The prompt wasn't accepted in time or the TV can't be reached. Turn it on, check that “LG Connect Apps” is enabled on its network and try again.", "O aviso não foi aceito a tempo ou não consigo chegar à TV. Ligue-a, verifique se «LG Connect Apps» está ativo na rede e tente de novo.", "L'invite n'a pas été acceptée à temps ou la TV est injoignable. Allumez-la, vérifiez que « LG Connect Apps » est actif sur son réseau et réessayez.", "Die Meldung wurde nicht rechtzeitig bestätigt oder der TV ist nicht erreichbar. Einschalten, prüfen, dass „LG Connect Apps“ im Netzwerk aktiv ist, und erneut versuchen."],
+"Después de añadirla: Ajustes → Emparejar y acepta el aviso en la TV.": ["After adding it: Settings → Pair and accept the prompt on the TV.", "Depois de adicioná-la: Ajustes → Emparelhar e aceite o aviso na TV.", "Après l'avoir ajoutée : Réglages → Appairer et acceptez l'invite sur la TV.", "Nach dem Hinzufügen: Einstellungen → Koppeln und die Meldung am TV bestätigen."],
+"La primera vez la TV pregunta «¿Permitir depuración USB?»: acepta.": ["The first time, the TV asks “Allow USB debugging?”: accept.", "Na primeira vez a TV pergunta «Permitir depuração USB?»: aceite.", "La première fois, la TV demande « Autoriser le débogage USB ? » : acceptez.", "Beim ersten Mal fragt der TV „USB-Debugging zulassen?“: bestätigen."],
+"Activa Opciones de desarrollador → Depuración ADB (o por red) y vuelve a buscar.": ["Enable Developer options → ADB debugging (or network debugging) and search again.", "Ative Opções do desenvolvedor → Depuração ADB (ou por rede) e procure de novo.", "Activez Options pour les développeurs → Débogage ADB (ou réseau) et relancez la recherche.", "Aktiviere Entwickleroptionen → ADB-Debugging (oder per Netzwerk) und suche erneut."],
+"Roku todavía no está soportado por TVHub.": ["Roku isn't supported by TVHub yet.", "O Roku ainda não é suportado pelo TVHub.", "Roku n'est pas encore pris en charge par TVHub.", "Roku wird von TVHub noch nicht unterstützt."],
+"Samsung todavía no está soportado por TVHub.": ["Samsung isn't supported by TVHub yet.", "A Samsung ainda não é suportada pelo TVHub.", "Samsung n'est pas encore pris en charge par TVHub.", "Samsung wird von TVHub noch nicht unterstützt."],
+"Sin ADB no se puede controlar. Si es un Chromecast con Google TV, activa la depuración ADB.": ["It can't be controlled without ADB. If it's a Chromecast with Google TV, enable ADB debugging.", "Sem ADB não é possível controlar. Se for um Chromecast com Google TV, ative a depuração ADB.", "Impossible de le contrôler sans ADB. Si c'est un Chromecast avec Google TV, activez le débogage ADB.", "Ohne ADB nicht steuerbar. Bei einem Chromecast mit Google TV das ADB-Debugging aktivieren."],
+"Crea el primer usuario": ["Create the first user", "Crie o primeiro usuário", "Créez le premier utilisateur", "Erstelle den ersten Benutzer"],
+"Será el administrador. Hasta que exista, nadie puede usar TVHub. El código de configuración aparece una sola vez en el registro del contenedor:": ["It will be the administrator. Until it exists, nobody can use TVHub. The setup code appears once in the container log:", "Será o administrador. Até que exista, ninguém pode usar o TVHub. O código de configuração aparece uma única vez no registro do contêiner:", "Ce sera l'administrateur. Tant qu'il n'existe pas, personne ne peut utiliser TVHub. Le code de configuration apparaît une seule fois dans le journal du conteneur :", "Das wird der Administrator. Bis er existiert, kann niemand TVHub nutzen. Den Einrichtungscode zeigt das Container-Log einmalig an:"],
+"Código de configuración": ["Setup code", "Código de configuração", "Code de configuration", "Einrichtungscode"],
+"Repite la contraseña": ["Repeat the password", "Repita a senha", "Répétez le mot de passe", "Passwort wiederholen"],
+"Al menos 12 caracteres (mejor una frase larga)": ["At least 12 characters (a long phrase is better)", "Pelo menos 12 caracteres (melhor uma frase longa)", "Au moins 12 caractères (une longue phrase est mieux)", "Mindestens 12 Zeichen (ein langer Satz ist besser)"],
+"Las dos contraseñas coinciden": ["Both passwords match", "As duas senhas coincidem", "Les deux mots de passe correspondent", "Beide Passwörter stimmen überein"],
+"Crear administrador": ["Create administrator", "Criar administrador", "Créer l'administrateur", "Administrator erstellen"],
+"Iniciar sesión": ["Sign in", "Entrar", "Se connecter", "Anmelden"],
+"Mantener la sesión iniciada en este equipo": ["Keep me signed in on this device", "Manter a sessão iniciada neste dispositivo", "Rester connecté sur cet appareil", "Auf diesem Gerät angemeldet bleiben"],
+"Entrar": ["Sign in", "Entrar", "Entrer", "Anmelden"],
+"Pared de TVs": ["TV wall", "Parede de TVs", "Mur de TV", "TV-Wand"],
+"Usuarios": ["Users", "Usuários", "Utilisateurs", "Benutzer"],
+"Cuentas, roles y tokens de API": ["Accounts, roles and API tokens", "Contas, funções e tokens de API", "Comptes, rôles et jetons d'API", "Konten, Rollen und API-Token"],
+"Cambiar contraseña": ["Change password", "Alterar senha", "Changer le mot de passe", "Passwort ändern"],
+"Cerrar sesión": ["Sign out", "Sair", "Se déconnecter", "Abmelden"],
+"Al cambiarla se cierran tus otras sesiones.": ["Changing it signs out your other sessions.", "Ao alterá-la, suas outras sessões são encerradas.", "Le changer déconnecte vos autres sessions.", "Beim Ändern werden deine anderen Sitzungen beendet."],
+"Contraseña actual": ["Current password", "Senha atual", "Mot de passe actuel", "Aktuelles Passwort"],
+"Contraseña nueva": ["New password", "Nova senha", "Nouveau mot de passe", "Neues Passwort"],
+"Repite la contraseña nueva": ["Repeat the new password", "Repita a nova senha", "Répétez le nouveau mot de passe", "Neues Passwort wiederholen"],
+"Al menos 12 caracteres; no puede ser una contraseña común ni contener el usuario.": ["At least 12 characters; it can't be a common password or contain the username.", "Pelo menos 12 caracteres; não pode ser uma senha comum nem conter o usuário.", "Au moins 12 caractères ; ce ne peut pas être un mot de passe courant ni contenir le nom d'utilisateur.", "Mindestens 12 Zeichen; kein gängiges Passwort und ohne den Benutzernamen."],
+"Añadir usuario": ["Add user", "Adicionar usuário", "Ajouter un utilisateur", "Benutzer hinzufügen"],
+"Rol": ["Role", "Função", "Rôle", "Rolle"],
+"Usuario (controla las TVs)": ["User (controls the TVs)", "Usuário (controla as TVs)", "Utilisateur (contrôle les TV)", "Benutzer (steuert die TVs)"],
+"Administrador": ["Administrator", "Administrador", "Administrateur", "Administrator"],
+"Contraseña inicial": ["Initial password", "Senha inicial", "Mot de passe initial", "Anfangspasswort"],
+"Tokens de API": ["API tokens", "Tokens de API", "Jetons d'API", "API-Token"],
+"Para integraciones como Home Assistant: la usan en lugar de un usuario y solo pueden controlar las TVs. El token se muestra una única vez.": ["For integrations such as Home Assistant: they use it instead of a user and can only control the TVs. The token is shown only once.", "Para integrações como o Home Assistant: elas o usam no lugar de um usuário e só podem controlar as TVs. O token é mostrado uma única vez.", "Pour les intégrations comme Home Assistant : elles l'utilisent à la place d'un utilisateur et ne peuvent que contrôler les TV. Le jeton n'est affiché qu'une fois.", "Für Integrationen wie Home Assistant: Sie nutzen es statt eines Benutzers und können nur die TVs steuern. Das Token wird nur einmal angezeigt."],
+"Nombre del token": ["Token name", "Nome do token", "Nom du jeton", "Token-Name"],
+"Crear token": ["Create token", "Criar token", "Créer le jeton", "Token erstellen"],
+"Las contraseñas no coinciden": ["The passwords don't match", "As senhas não coincidem", "Les mots de passe ne correspondent pas", "Die Passwörter stimmen nicht überein"],
+"Aún no hay TVs": ["No TVs yet", "Ainda não há TVs", "Aucune TV pour l'instant", "Noch keine TVs"],
+"Añade tu primera TV o búscalas en tu red.": ["Add your first TV or search for them on your network.", "Adicione sua primeira TV ou procure-as na sua rede.", "Ajoutez votre première TV ou cherchez-les sur votre réseau.", "Füge deinen ersten TV hinzu oder suche sie in deinem Netzwerk."],
+"Pide a un administrador que añada las TVs.": ["Ask an administrator to add the TVs.", "Peça a um administrador que adicione as TVs.", "Demandez à un administrateur d'ajouter les TV.", "Bitte einen Administrator, die TVs hinzuzufügen."],
+"Clic en una TV para abrirla con imagen en vivo · teclas 1-9 · W alterna entre la pared y el mando.": ["Click a TV to open it with live video · keys 1-9 · W switches between the wall and the remote.", "Clique em uma TV para abri-la com imagem ao vivo · teclas 1-9 · W alterna entre a parede e o controle.", "Cliquez sur une TV pour l'ouvrir en direct · touches 1-9 · W alterne entre le mur et la télécommande.", "Klicke auf einen TV, um ihn live zu öffnen · Tasten 1-9 · W wechselt zwischen Wand und Fernbedienung."],
+"Restablecer la contraseña de {0}": ["Reset {0}'s password", "Redefinir a senha de {0}", "Réinitialiser le mot de passe de {0}", "Passwort von {0} zurücksetzen"],
+"Se cerrarán todas sus sesiones.": ["All their sessions will be signed out.", "Todas as sessões dele serão encerradas.", "Toutes ses sessions seront fermées.", "Alle seine Sitzungen werden beendet."],
+"Contraseña cambiada": ["Password changed", "Senha alterada", "Mot de passe modifié", "Passwort geändert"],
+"desactivado": ["disabled", "desativado", "désactivé", "deaktiviert"],
+"tú": ["you", "você", "vous", "du"],
+"Rol actualizado": ["Role updated", "Função atualizada", "Rôle mis à jour", "Rolle aktualisiert"],
+"Restablecer clave": ["Reset password", "Redefinir senha", "Réinit. mot de passe", "Passwort zurücksetzen"],
+"Activar": ["Enable", "Ativar", "Activer", "Aktivieren"],
+"¿Eliminar al usuario «{0}»?": ["Delete user “{0}”?", "Excluir o usuário «{0}»?", "Supprimer l'utilisateur « {0} » ?", "Benutzer „{0}“ löschen?"],
+"Sin tokens": ["No tokens", "Sem tokens", "Aucun jeton", "Keine Token"],
+"usado {0}": ["used {0}", "usado {0}", "utilisé {0}", "benutzt {0}"],
+"sin usar": ["unused", "sem uso", "inutilisé", "unbenutzt"],
+"Revocar": ["Revoke", "Revogar", "Révoquer", "Widerrufen"],
+"¿Revocar el token «{0}»? Las integraciones que lo usen dejarán de funcionar.": ["Revoke the token “{0}”? Integrations using it will stop working.", "Revogar o token «{0}»? As integrações que o usam deixarão de funcionar.", "Révoquer le jeton « {0} » ? Les intégrations qui l'utilisent cesseront de fonctionner.", "Token „{0}“ widerrufen? Integrationen, die es nutzen, funktionieren dann nicht mehr."],
+"Usuario creado": ["User created", "Usuário criado", "Utilisateur créé", "Benutzer erstellt"],
+"Copia este token ahora; no se volverá a mostrar:": ["Copy this token now; it won't be shown again:", "Copie este token agora; ele não será mostrado novamente:", "Copiez ce jeton maintenant ; il ne sera plus affiché :", "Kopiere dieses Token jetzt; es wird nicht erneut angezeigt:"],
+"Usuario o contraseña incorrectos": ["Wrong username or password", "Usuário ou senha incorretos", "Identifiant ou mot de passe incorrect", "Benutzername oder Passwort falsch"],
+"Demasiados intentos. Espera {0} s": ["Too many attempts. Wait {0} s", "Muitas tentativas. Aguarde {0} s", "Trop de tentatives. Attendez {0} s", "Zu viele Versuche. Warte {0} s"],
+"Código de configuración incorrecto": ["Wrong setup code", "Código de configuração incorreto", "Code de configuration incorrect", "Falscher Einrichtungscode"],
+"TVHub ya está configurado": ["TVHub is already set up", "O TVHub já está configurado", "TVHub est déjà configuré", "TVHub ist bereits eingerichtet"],
+"Contraseña no válida": ["Invalid password", "Senha inválida", "Mot de passe non valide", "Ungültiges Passwort"],
+"La contraseña debe tener al menos 12 caracteres": ["The password must be at least 12 characters long", "A senha deve ter pelo menos 12 caracteres", "Le mot de passe doit contenir au moins 12 caractères", "Das Passwort muss mindestens 12 Zeichen lang sein"],
+"La contraseña es demasiado larga (máximo 128)": ["The password is too long (maximum 128)", "A senha é longa demais (máximo 128)", "Le mot de passe est trop long (128 maximum)", "Das Passwort ist zu lang (maximal 128)"],
+"Esa contraseña es demasiado común; elige otra": ["That password is too common; choose another", "Essa senha é comum demais; escolha outra", "Ce mot de passe est trop courant ; choisissez-en un autre", "Dieses Passwort ist zu gängig; wähle ein anderes"],
+"La contraseña no puede contener el nombre de usuario": ["The password can't contain the username", "A senha não pode conter o nome de usuário", "Le mot de passe ne peut pas contenir le nom d'utilisateur", "Das Passwort darf den Benutzernamen nicht enthalten"],
+"Usa una contraseña menos repetitiva o predecible": ["Use a less repetitive or predictable password", "Use uma senha menos repetitiva ou previsível", "Utilisez un mot de passe moins répétitif ou prévisible", "Nutze ein weniger repetitives oder vorhersehbares Passwort"],
+"El usuario debe tener de 3 a 32 caracteres: minúsculas, números, punto, guion o guion bajo": ["The username must be 3 to 32 characters: lowercase letters, digits, dot, hyphen or underscore", "O usuário deve ter de 3 a 32 caracteres: minúsculas, números, ponto, hífen ou sublinhado", "L'identifiant doit contenir de 3 à 32 caractères : minuscules, chiffres, point, tiret ou tiret bas", "Der Benutzername muss 3 bis 32 Zeichen haben: Kleinbuchstaben, Ziffern, Punkt, Bindestrich oder Unterstrich"],
+"Ya existe un usuario con ese nombre": ["A user with that name already exists", "Já existe um usuário com esse nome", "Un utilisateur portant ce nom existe déjà", "Ein Benutzer mit diesem Namen existiert bereits"],
+"Rol no válido": ["Invalid role", "Função inválida", "Rôle non valide", "Ungültige Rolle"],
+"Usuario no encontrado": ["User not found", "Usuário não encontrado", "Utilisateur introuvable", "Benutzer nicht gefunden"],
+"No puedes quitar al último administrador": ["You can't remove the last administrator", "Você não pode remover o último administrador", "Vous ne pouvez pas retirer le dernier administrateur", "Der letzte Administrator kann nicht entfernt werden"],
+"No puedes desactivar al último administrador": ["You can't disable the last administrator", "Você não pode desativar o último administrador", "Vous ne pouvez pas désactiver le dernier administrateur", "Der letzte Administrator kann nicht deaktiviert werden"],
+"La contraseña actual no es correcta": ["The current password is wrong", "A senha atual não está correta", "Le mot de passe actuel est incorrect", "Das aktuelle Passwort ist falsch"],
+"Solo desde una sesión de usuario": ["Only from a user session", "Somente a partir de uma sessão de usuário", "Uniquement depuis une session utilisateur", "Nur aus einer Benutzersitzung"],
+"Ponle un nombre al token": ["Give the token a name", "Dê um nome ao token", "Donnez un nom au jeton", "Gib dem Token einen Namen"],
+"Petición no válida": ["Invalid request", "Requisição inválida", "Requête non valide", "Ungültige Anfrage"],
+"Origen no permitido": ["Origin not allowed", "Origem não permitida", "Origine non autorisée", "Herkunft nicht erlaubt"],
+"Sesión no válida; recarga la página": ["Invalid session; reload the page", "Sessão inválida; recarregue a página", "Session non valide ; rechargez la page", "Ungültige Sitzung; Seite neu laden"],
+"Solo un administrador puede hacer esto": ["Only an administrator can do this", "Somente um administrador pode fazer isso", "Seul un administrateur peut faire cela", "Das darf nur ein Administrator"]
+};
+
+function pickLang() {
+  const saved = store.get("tvhub.lang");
+  if (saved && LANGS.some((l) => l[0] === saved)) return saved;
+  for (const l of (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ""])) {
+    const c = String(l).slice(0, 2).toLowerCase();
+    if (LANGS.some((x) => x[0] === c)) return c;
+  }
+  return "en";                                      // unsupported browser language: English
+}
+let lang = pickLang();
+function T(s, ...a) {
+  let r = s;
+  if (lang !== "es") { const e = I18N[s]; if (e && e[LIDX[lang]]) r = e[LIDX[lang]]; }
+  return a.length ? r.replace(/\{(\d)\}/g, (_, i) => (a[i] === undefined ? "" : a[i])) : r;
+}
+// Messages that come from the server (Spanish): exact match first, then the ones with {0} placeholders.
+let _pats = null;
+function Tm(s) {
+  if (lang === "es" || typeof s !== "string" || !s) return s;
+  if (I18N[s]) return T(s);
+  if (!_pats) _pats = Object.keys(I18N).filter((k) => /\{\d\}/.test(k)).map((k) => [new RegExp("^" + k.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\{\d\}/g, "(.+?)") + "$"), k]);
+  for (const [rx, k] of _pats) { const m = rx.exec(s); if (m) return T(k, ...m.slice(1)); }
+  return s;
+}
+// Static markup: remember the Spanish original of every text node / attribute once, and re-translate on demand.
+const _tn = [], _ta = [];
+(function collect() {
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = w.nextNode(); n; n = w.nextNode()) {
+    if (!n.nodeValue.trim() || /^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName) || n.parentNode.closest("svg,script,style,#toast")) continue;
+    _tn.push([n, n.nodeValue]);
+  }
+  document.querySelectorAll("[title],[aria-label],[placeholder]").forEach((el) => {
+    ["title", "aria-label", "placeholder"].forEach((a) => { if (el.hasAttribute(a)) _ta.push([el, a, el.getAttribute(a)]); });
+  });
+})();
+function applyStatic() {
+  document.documentElement.lang = lang;
+  for (const [n, es] of _tn) { const k = es.trim(); n.nodeValue = es.replace(k, T(k)); }
+  for (const [el, a, es] of _ta) el.setAttribute(a, T(es));
+}
+
+
+// ------------------------------------------------------------------ language picker (works on the sign-in screen too)
+const langHooks = [];
+["langSel", "authLang"].forEach((id) => {
+  const sel = $(id);
+  LANGS.forEach(([c, n]) => { const o = document.createElement("option"); o.value = c; o.textContent = n; sel.append(o); });
+  sel.value = lang;
+  sel.addEventListener("change", () => setLang(sel.value));
+});
+function setLang(c) {
+  lang = c; store.set("tvhub.lang", c); $("langSel").value = c; $("authLang").value = c;
+  applyStatic(); langHooks.forEach((f) => f());
+}
+applyStatic();
+
+// ------------------------------------------------------------------ session (sign-in / first-run setup)
+let me = null, csrf = "", _reloading = false;
+const _fetch = window.fetch.bind(window);
+window.fetch = (u, o = {}) => {                       // every state-changing request carries the session's CSRF token
+  const m = (o.method || "GET").toUpperCase();
+  if (m !== "GET" && m !== "HEAD" && csrf) o = { ...o, headers: { ...(o.headers || {}), "X-CSRF-Token": csrf } };
+  return _fetch(u, { credentials: "same-origin", ...o }).then((r) => {
+    if (r.status === 401 && !String(u).startsWith("/api/auth/") && !_reloading) { _reloading = true; location.reload(); }
+    return r;
+  });
+};
+function showAuth(mode) {
+  document.querySelector(".wrap").hidden = true; $("auth").hidden = false;
+  $("setupForm").hidden = mode !== "setup"; $("loginForm").hidden = mode !== "login";
+  (mode === "setup" ? $("suCode") : $("liUser")).focus();
+}
+function startApp(st) {
+  me = st.user; csrf = st.csrf || "";
+  $("auth").hidden = true; document.querySelector(".wrap").hidden = false;
+  bootApp();
+}
+async function postAuth(url, body) {
+  try {
+    const r = await _fetch(url, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    return { ok: r.ok, j };
+  } catch (_) { return { ok: false, j: { error: "No se pudo contactar con el servidor" } }; }
+}
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault(); $("liErr").textContent = ""; $("liGo").disabled = true;
+  const r = await postAuth("/api/auth/login", { username: $("liUser").value, password: $("liPass").value, remember: $("liRemember").checked });
+  $("liGo").disabled = false;
+  if (!r.ok) { $("liErr").textContent = Tm(r.j.error || "Usuario o contraseña incorrectos"); $("liPass").value = ""; $("liPass").focus(); return; }
+  $("liPass").value = ""; startApp(r.j);
+});
+function setupRules() {
+  const p = $("suPass").value;
+  $("ruleLen").classList.toggle("ok", p.length >= 12);
+  $("ruleMatch").classList.toggle("ok", p.length > 0 && p === $("suPass2").value);
+}
+$("suPass").addEventListener("input", setupRules); $("suPass2").addEventListener("input", setupRules);
+$("setupForm").addEventListener("submit", async (e) => {
+  e.preventDefault(); $("suErr").textContent = "";
+  if ($("suPass").value !== $("suPass2").value) { $("suErr").textContent = T("Las contraseñas no coinciden"); return; }
+  $("suGo").disabled = true;
+  const r = await postAuth("/api/auth/setup", { code: $("suCode").value, username: $("suUser").value, password: $("suPass").value });
+  $("suGo").disabled = false;
+  if (!r.ok) { $("suErr").textContent = Tm(r.j.error || "No se pudo guardar"); return; }
+  $("suPass").value = $("suPass2").value = ""; startApp(r.j);
+});
+async function init() {
+  let st = null;
+  try { st = await (await _fetch("/api/auth/status", { credentials: "same-origin" })).json(); } catch (_) { /* server down */ }
+  if (!st) { showAuth("login"); $("liErr").textContent = T("No se pudo contactar con el servidor"); return; }
+  if (st.setup_required) showAuth("setup");
+  else if (!st.authenticated) showAuth("login");
+  else startApp(st);
+}
+
+function bootApp() {
 // ------------------------------------------------------------------ state
 let tvs = [], cur = store.get("tvhub.tv"), vidaaOK = true, webosOK = true;
 const curTV = () => tvs.find((t) => t.id === cur) || null;
@@ -464,71 +1102,154 @@ function hideOverlay() { $("overlay").classList.add("hide"); }
 
 const TYPE_LABEL = { android: "ANDROID", vidaa: "VIDAA", webos: "WEBOS" };
 const DEF_PORT = { android: 5555, vidaa: 36669, webos: 3001 };
-const STATE_TXT = {
+const STATE_ES = {
   device: "Conectada", disconnected: "Sin conexión", unauthorized: "Acepta el aviso en la TV",
   needs_pairing: "Falta emparejar (Ajustes → Emparejar)", no_host: "Sin IP",
 };
+const STATE_TXT = new Proxy({}, { get: (_, k) => (STATE_ES[k] ? T(STATE_ES[k]) : undefined) });
 
 // ------------------------------------------------------------------ rendering
 function renderTabs() {
   const box = $("tvTabs"); box.textContent = "";
   tvs.forEach((t, i) => {
     const b = document.createElement("button"); b.className = "tvtab" + (t.id === cur ? " active" : "");
-    b.title = `${t.name} · ${t.host} · ${STATE_TXT[t.state] || t.state}` + (i < 9 ? `  (tecla ${i + 1})` : "");
+    b.title = `${t.name} · ${t.host} · ${STATE_TXT[t.state] || t.state}` + (i < 9 ? `  (${T("tecla {0}", i + 1)})` : "");
     const d = document.createElement("span"); d.className = "dot " + (t.state === "device" ? "ok" : t.state === "disconnected" ? "bad" : "warn");
     const n = document.createElement("span"); n.textContent = t.name;
     const g = document.createElement("span"); g.className = "badge"; g.textContent = TYPE_LABEL[t.type] || t.type.toUpperCase();
-    b.append(d, n, g); b.onclick = () => selectTV(t.id); box.append(b);
+    b.append(d, n, g); b.onclick = () => (wallOn ? openFromWall(t.id) : selectTV(t.id)); box.append(b);
   });
 }
 
 function renderPill() {
   const t = curTV(), dot = $("dot"); dot.className = "dot";
-  if (!t) { $("statusText").textContent = "Sin TVs"; dot.classList.add("bad"); return; }
+  if (!t) { $("statusText").textContent = T("Sin TVs"); dot.classList.add("bad"); return; }
   dot.classList.add(t.state === "device" ? "ok" : t.state === "disconnected" ? "bad" : "warn");
   $("statusText").textContent = t.state === "device"
     ? (t.model || t.name) + (t.app ? " · " + t.app : "") : STATE_TXT[t.state] || t.state;
 }
 
+// Show the logo of what the TV is running (or its HDMI input); keep the generic icon when there is none.
+function setLogo(img, t, fallback) {
+  const f = t && t.state === "device" ? t.focus : "";
+  const want = f ? appIcon(t.id, f) : "";
+  if (img.dataset.src !== want) {
+    img.dataset.src = want; img.hidden = true; if (fallback) fallback.style.display = "";
+    if (want) {
+      img.onload = () => { if (img.dataset.src === want) { img.hidden = false; if (fallback) fallback.style.display = "none"; } };
+      img.onerror = () => { if (img.dataset.src === want) { img.hidden = true; if (fallback) fallback.style.display = ""; } };
+      img.src = want;
+    } else img.removeAttribute("src");
+  }
+}
+// Video TVs open on the "now playing" card; the live picture is opt-in per TV (button), so it does not stream unless asked.
+let liveSet = new Set();
+try { liveSet = new Set(JSON.parse(store.get("tvhub.live") || "[]")); } catch (_) {}
+const liveOn = (t) => !!t && !!t.caps.video && liveSet.has(t.id);
+function setLive(on) {
+  const t = curTV(); if (!t || !t.caps.video) return;
+  on ? liveSet.add(t.id) : liveSet.delete(t.id);
+  store.set("tvhub.live", JSON.stringify([...liveSet]));
+  gotFrame = false; stopVideo();
+  if (on) startVideo();
+  renderAll();
+}
 function renderStage() {
   const t = curTV(), stage = $("stage");
-  const novid = !!t && !t.caps.video;
+  const novid = !!t && !liveOn(t);
   stage.classList.toggle("novid", novid);
   $("noVideo").hidden = !novid;
   canvas.style.visibility = novid ? "hidden" : "visible";
-  if (!t) { showOverlay("Añade tu primera TV", "Pulsa «Buscar» para encontrarlas en tu red, o «+ Añadir TV» si ya sabes su IP. En Android hace falta la depuración ADB activada."); return; }
+  if (!t) { showOverlay(T("Añade tu primera TV"), T("Pulsa «Buscar» para encontrarlas en tu red, o «+ Añadir TV» si ya sabes su IP. En Android hace falta la depuración ADB activada.")); return; }
   if (novid) {
     hideOverlay();
-    $("nvName").textContent = t.name;
+    const on = t.state === "device";
+    $("nvName").textContent = t.name + (t.model ? " · " + t.model : "");
     $("nvState").textContent = STATE_TXT[t.state] || t.state;
-    $("nvVol").textContent = t.volume != null ? (t.muted ? "🔇 " : "") + t.volume : "";
+    $("nvDot").className = "dot " + (on ? "ok" : t.state === "disconnected" ? "bad" : "warn");
+    $("nvApp").textContent = on ? (t.app || "") : "";
+    $("nvApp").hidden = !(on && t.app);
+    $("nvVolBox").hidden = !(on && t.volume != null);
+    $("nvVolBox").classList.toggle("muted", !!t.muted);
+    $("nvVol").textContent = t.volume != null ? (t.muted ? "🔇" : t.volume) : "";
+    $("nvBar").style.width = Math.max(0, Math.min(100, t.volume || 0)) + "%";
+    setLogo($("nvLogo"), t, $("nvIcon"));
+    $("btnLive").hidden = !t.caps.video; $("nvNote").hidden = !!t.caps.video;
     return;
   }
   if (t.state === "device") {
     if (gotFrame) hideOverlay();
-    else if (!snapshotMode) showOverlay("Esperando imagen…", "Si la pantalla de la TV no cambia, mueve el cursor con las flechas.");
+    else if (!snapshotMode) showOverlay(T("Esperando imagen…"), T("Si la pantalla de la TV no cambia, mueve el cursor con las flechas."));
   }
-  else if (t.state === "unauthorized") showOverlay("Autoriza la depuración USB", "En la TV aparece «¿Permitir depuración USB?». Marca «Permitir siempre» y acepta.");
-  else showOverlay("No llego a la TV", "Comprueba que está encendida (no en reposo), que la IP es correcta y que la depuración ADB está activa.");
+  else if (t.state === "unauthorized") showOverlay(T("Autoriza la depuración USB"), T("En la TV aparece «¿Permitir depuración USB?». Marca «Permitir siempre» y acepta."));
+  else showOverlay(T("No llego a la TV"), T("Comprueba que está encendida (no en reposo), que la IP es correcta y que la depuración ADB está activa."));
 }
 
+let inputsFor = "", inputList = [];
+async function loadInputs() {
+  const id = cur; inputsFor = id; inputList = [];
+  try { const j = await (await fetch(withQ(`/api/tvs/${id}/inputs`))).json(); if (id === cur && Array.isArray(j)) inputList = j; } catch (_) {}
+  if (id === cur) renderInputs();
+}
+function renderInputs() {
+  const t = curTV(), box = $("chips");
+  box.hidden = !(t && t.caps.inputs && inputList.length);
+  box.textContent = "";
+  const m = /hdmi[ _-]?(\d)/i.exec(t ? t.focus || "" : "");
+  for (const i of inputList) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip" + (i.connected === false ? " off" : "");
+    b.textContent = i.name; b.dataset.id = i.id;
+    const n = /hdmi[ _-]?(\d)/i.exec(i.id + " " + i.name);
+    if (m && n && m[1] === n[1]) b.classList.add("on");
+    b.onclick = async () => { const ok = await post(`/api/tvs/${t.id}/input`, { id: i.id }); toast(ok ? T("Entrada: {0}", i.name) : T("No se pudo cambiar de entrada")); };
+    box.append(b);
+  }
+  const via = t && t.volume_via ? tvs.find((x) => x.id === t.volume_via) : null;
+  $("btnShow").hidden = !(t && via && t.hdmi && via.caps.inputs);
+  if (!$("btnShow").hidden) $("btnShow").textContent = T("Mostrar en {0} (HDMI {1})", via.name, t.hdmi);
+}
+async function post(url, body) {
+  try {
+    const r = await fetch(withQ(url), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.ok === false) { toast(Tm(j.error || j.detail || "No se pudo")); return false; }
+    return true;
+  } catch (_) { toast(T("No se pudo contactar con el servidor")); return false; }
+}
+async function powerTV(t, on) {
+  toast(T(on ? "Encendiendo {0}…" : "Apagando {0}…", t.name));
+  try {
+    const r = await fetch(withQ(`/api/tvs/${t.id}/power`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) });
+    const j = await r.json().catch(() => ({}));
+    toast(j.ok ? (j.detail ? t.name + ": " + Tm(j.detail) : T(on ? "{0}: encendida" : "{0}: apagada", t.name)) : t.name + ": " + Tm(j.detail || j.error || T("no respondió")));
+  } catch (_) { toast(T("No se pudo contactar con el servidor")); }
+}
+$("btnLive").onclick = () => setLive(true);
+$("btnCard").onclick = () => setLive(false);
+$("btnOn").onclick = () => { const t = curTV(); if (t) powerTV(t, true); };
+$("btnOff").onclick = () => { const t = curTV(); if (t) powerTV(t, false); };
+$("btnShow").onclick = async () => {
+  const t = curTV(); if (!t) return;
+  const ok = await post(`/api/tvs/${t.id}/show`); toast(ok ? T("Cambiando la entrada de la TV…") : T("No se pudo cambiar la entrada"));
+};
 function renderRemote() {
+  if (cur && inputsFor !== cur) loadInputs(); else renderInputs();
   const c = caps();
-  $("quality").parentElement.hidden = !c.video;
+  $("quality").parentElement.hidden = !liveOn(curTV());
   $("apps").hidden = !c.apps;
   document.querySelector(".typebox").hidden = !c.text;
   $("btnShot").hidden = !c.snapshot;
-  $("btnFull").hidden = !c.video;
+  $("btnFull").hidden = !liveOn(curTV());
   const t = curTV(), via = t && t.volume_via ? tvs.find((x) => x.id === t.volume_via) : null;
-  document.querySelectorAll('[data-k^="VOLUME_"]').forEach((b) => { b.title = via ? `Se envía a ${via.name}` : ""; });
+  document.querySelectorAll('[data-k^="VOLUME_"]').forEach((b) => { b.title = via ? T("Se envía a {0}", via.name) : ""; });
 }
 
-function renderAll() { renderTabs(); renderPill(); renderStage(); renderRemote(); markActiveApp(); if (wallOn) renderWall(); }
+function renderAll() { $("editLabel").textContent = curTV() ? T("Ajustes de {0}", curTV().name) : T("Añadir TV"); renderTabs(); renderPill(); renderStage(); renderRemote(); markActiveApp(); if (wallOn) renderWall(); }
 
 // ------------------------------------------------------------------ control socket
 let ctl, ctlBackoff = 500;
 function connectControl() {
-  ctl = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws/control" + QS);
+  ctl = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws/control");
   ctl.onopen = () => { ctlBackoff = 500; };
   ctl.onmessage = (e) => {
     const m = JSON.parse(e.data);
@@ -569,7 +1290,7 @@ function switchedTo() {
   $("apps").textContent = ""; $("hudFps").textContent = "0 fps"; $("hudRes").textContent = "—";
   stopVideo();
   const t = curTV();
-  if (t && t.caps.video) startVideo();
+  if (liveOn(t) && !wallOn) startVideo();
   if (t && t.caps.apps && t.state === "device") loadApps();
 }
 
@@ -599,14 +1320,14 @@ function stopVideo() {
   vws = null; curCodec = ""; needKey = true;
 }
 function startVideo() {
-  const t = curTV(); if (!t || !t.caps.video) return;
+  const t = curTV(); if (!liveOn(t)) return;
   if (!("VideoDecoder" in window)) {
     return startSnapshots(window.isSecureContext ? "Este navegador no soporta WebCodecs." :
       "WebCodecs solo funciona en localhost o HTTPS. Abre http://localhost:8080 para el video fluido.");
   }
   const gen = ++vgen, [size, bitrate] = $("quality").value.split("|");
   const ws = vws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host +
-    `/ws/video?tv=${t.id}&size=${size}&bitrate=${bitrate}` + (QS ? "&" + QS.slice(1) : ""));
+    `/ws/video?tv=${t.id}&size=${size}&bitrate=${bitrate}`);
   ws.binaryType = "arraybuffer"; needKey = true; curCodec = ""; newDecoder(gen);
   ws.onopen = () => { videoBackoff = 500; $("hudMode").textContent = "H.264 en vivo"; };
   ws.onmessage = async (e) => {
@@ -688,6 +1409,7 @@ setInterval(() => {
 }, 500);
 
 // ------------------------------------------------------------------ apps
+const appIcon = (tvId, pkg) => withQ(`/api/tvs/${encodeURIComponent(tvId)}/appicon/${encodeURIComponent(pkg)}`);
 let appsLoaded = false, apps = [];
 async function loadApps() {
   const id = cur; appsLoaded = true;
@@ -699,8 +1421,10 @@ async function loadApps() {
       const b = document.createElement("button"); b.className = "app"; b.dataset.pkg = a.pkg; b.title = a.name;
       const ico = document.createElement("div"); ico.className = "ico"; ico.style.background = a.color;
       ico.textContent = a.name.replace(/[^A-Za-z0-9+]/g, "").slice(0, 2);
+      const im = new Image(); im.alt = ""; im.src = appIcon(id, a.pkg);
+      im.onload = () => { ico.textContent = ""; ico.style.background = "transparent"; ico.append(im); };
       const s = document.createElement("small"); s.textContent = a.name;
-      b.append(ico, s); b.onclick = () => { send({ t: "app", pkg: a.pkg }); toast("Abriendo " + a.name + "…"); };
+      b.append(ico, s); b.onclick = () => { send({ t: "app", pkg: a.pkg }); toast(T("Abriendo {0}…", a.name)); };
       box.append(b);
     }
     markActiveApp();
@@ -723,7 +1447,7 @@ const KEYMAP = {
 const live = () => $("liveTyping").checked;
 
 document.addEventListener("keydown", (e) => {
-  if (e.metaKey || e.ctrlKey || e.altKey || $("dlg").open || $("haDlg").open || $("scanDlg").open) return;
+  if (e.metaKey || e.ctrlKey || e.altKey || drawer.classList.contains("open") || $("dlg").open || $("haDlg").open || $("scanDlg").open || $("allDlg").open) return;
   const inField = e.target.tagName === "INPUT" || e.target.tagName === "SELECT";
   if (inField && e.target !== $("liveTyping")) {
     if (e.target === $("textInput") && e.key === "Enter") { e.preventDefault(); sendText(); }
@@ -739,8 +1463,7 @@ document.addEventListener("keydown", (e) => {
   }
   if (e.key === "w" || e.key === "W") { setWall(!wallOn); return; }
   if (wallOn) {                                         // in the wall only 1-9 and Esc do something; the remote keys would hit a TV you cannot see
-    if (e.key === "Escape") setWall(false);
-    else if (/^[1-9]$/.test(e.key) && tvs[+e.key - 1]) openFromWall(tvs[+e.key - 1].id);
+    if (/^[1-9]$/.test(e.key) && tvs[+e.key - 1]) openFromWall(tvs[+e.key - 1].id);
     return;
   }
   if (/^[1-9]$/.test(e.key) && tvs[+e.key - 1]) { selectTV(tvs[+e.key - 1].id); return; }
@@ -757,13 +1480,13 @@ function sendText() { const v = $("textInput").value; if (v) { send({ t: "text",
 $("btnSend").onclick = sendText;
 function liveChanged() {
   $("liveLabel").classList.toggle("live-on", live());
-  $("liveLabel").textContent = live() ? "Teclado en vivo ACTIVO · Esc para salir" : "Teclado en vivo: lo que teclees llega a la TV";
-  if (live()) { document.activeElement && document.activeElement.blur(); toast("Escribe: cada tecla va a la TV"); }
+  $("liveLabel").textContent = live() ? T("Teclado en vivo ACTIVO · Esc para salir") : T("Teclado en vivo: lo que teclees llega a la TV");
+  if (live()) { document.activeElement && document.activeElement.blur(); toast(T("Escribe: cada tecla va a la TV")); }
 }
 $("liveTyping").addEventListener("change", liveChanged);
 function toggleFull() { document.fullscreenElement ? document.exitFullscreen() : $("stage").requestFullscreen().catch(() => {}); }
 $("btnFull").onclick = toggleFull;
-function saveShot() { const a = document.createElement("a"); a.href = withQ(`/api/tvs/${cur}/snapshot?download=1`); a.click(); toast("Guardando captura…"); }
+function saveShot() { const a = document.createElement("a"); a.href = withQ(`/api/tvs/${cur}/snapshot?download=1`); a.click(); toast(T("Guardando captura…")); }
 $("btnShot").onclick = saveShot;
 $("quality").addEventListener("change", () => { gotFrame = false; stopVideo(); setTimeout(startVideo, 100); });
 
@@ -772,7 +1495,7 @@ let editing = null;                                   // TV object being edited,
 const dlg = $("dlg");
 function fillVia(selected) {
   const sel = $("fVia"); sel.textContent = "";
-  const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "Esta misma TV"; sel.append(o0);
+  const o0 = document.createElement("option"); o0.value = ""; o0.textContent = T("Esta misma TV"); sel.append(o0);
   tvs.filter((t) => !editing || t.id !== editing.id).forEach((t) => {
     const o = document.createElement("option"); o.value = t.id; o.textContent = t.name + (t.type === "android" ? "" : " (" + TYPE_LABEL[t.type] + ")"); sel.append(o);
   });
@@ -781,57 +1504,72 @@ function fillVia(selected) {
 function typeChanged() {
   const ty = $("fType").value, v = ty === "vidaa", w = ty === "webos";
   $("vidaaOpts").hidden = !(v || w);
+  $("tvRow").hidden = ty !== "android";
   $("tlsRow").hidden = w;
-  $("macHint").textContent = w ? "(opcional; solo para encenderla)" : "(solo TVs recientes; opcional)";
+  $("macHint").textContent = w ? T("(opcional; solo para encenderla)") : T("(solo TVs recientes; opcional)");
   $("fPort").placeholder = String(DEF_PORT[ty] || 5555);
   $("fPort").disabled = w;
   $("pairBox").hidden = !((v || w) && editing);
   $("pinLine").hidden = w;
-  $("btnPairStart").textContent = w ? "Emparejar con la TV" : "Mostrar PIN en la TV";
-  $("pairHelp").textContent = w ? "Pulsa el botón y acepta el aviso que aparece en la TV (tienes 30 segundos)."
-    : "Pulsa el botón: la TV mostrará un PIN. Escríbelo aquí.";
+  $("btnPairStart").textContent = w ? T("Emparejar con la TV") : T("Mostrar PIN en la TV");
+  $("pairHelp").textContent = w ? T("Pulsa el botón y acepta el aviso que aparece en la TV (tienes 30 segundos).")
+    : T("Pulsa el botón: la TV mostrará un PIN. Escríbelo aquí.");
 }
 $("fType").addEventListener("change", typeChanged);
 function openDialog(tv) {
   editing = tv || null; $("formErr").textContent = ""; $("pairMsg").textContent = "";
-  $("dlgTitle").textContent = tv ? "Ajustes de " + tv.name : "Añadir TV";
+  $("dlgTitle").textContent = tv ? T("Ajustes de {0}", tv.name) : T("Añadir TV");
   $("fName").value = tv ? tv.name : ""; $("fType").value = tv ? tv.type : "android"; $("fType").disabled = !!tv;
   $("fHost").value = tv ? tv.host : ""; $("fPort").value = tv && tv.port !== DEF_PORT[tv.type] ? tv.port : "";
   $("fMac").value = tv ? tv.mac : ""; $("fTls").checked = tv ? tv.tls !== false : true;
   $("btnDelete").hidden = !tv; fillVia(tv ? tv.volume_via : "");
+  $("fHdmi").value = String(tv ? tv.hdmi || 0 : 0); $("fTv").checked = !!(tv && tv.tv);
   $("fType").querySelector('[value="vidaa"]').disabled = !vidaaOK;
   $("fType").querySelector('[value="webos"]').disabled = !webosOK;
   typeChanged(); dlg.showModal(); $("fName").focus();
 }
 $("btnAdd").onclick = () => openDialog(null);
-$("btnEdit").onclick = () => { const t = curTV(); t ? openDialog(t) : openDialog(null); };
+const drawer = $("drawer");
+function setDrawer(on) {
+  drawer.classList.toggle("open", on); drawer.inert = !on; drawer.setAttribute("aria-hidden", String(!on));
+  $("btnMenu").setAttribute("aria-expanded", String(on));
+  const sc = $("scrim");
+  if (on) { sc.hidden = false; requestAnimationFrame(() => sc.classList.add("show")); $("btnEdit").focus(); }
+  else { sc.classList.remove("show"); setTimeout(() => { if (!drawer.classList.contains("open")) sc.hidden = true; }, 200); $("btnMenu").focus(); }
+}
+$("btnMenu").onclick = () => setDrawer(!drawer.classList.contains("open"));
+$("btnMenuClose").onclick = () => setDrawer(false);
+$("scrim").onclick = () => setDrawer(false);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && drawer.classList.contains("open")) { e.preventDefault(); e.stopImmediatePropagation(); setDrawer(false); } }, true);
+$("btnEdit").onclick = () => { setDrawer(false); const t = curTV(); t ? openDialog(t) : openDialog(null); };
 $("btnCancel").onclick = () => dlg.close();
 
 $("tvForm").addEventListener("submit", async (e) => {
   e.preventDefault(); $("formErr").textContent = "";
   const body = { name: $("fName").value.trim(), type: $("fType").value, host: $("fHost").value.trim(), port: $("fPort").value.trim() || undefined,
-    mac: $("fMac").value.trim(), tls: $("fTls").checked, volume_via: $("fVia").value };
+    mac: $("fMac").value.trim(), tls: $("fTls").checked, volume_via: $("fVia").value,
+    hdmi: parseInt($("fHdmi").value, 10) || 0, tv: $("fTv").checked };
   try {
     const r = await fetch(withQ(editing ? `/api/tvs/${editing.id}` : "/api/tvs"), { method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const j = await r.json();
-    if (!r.ok) { $("formErr").textContent = j.error || "No se pudo guardar"; return; }
+    if (!r.ok) { $("formErr").textContent = Tm(j.error || "No se pudo guardar"); return; }
     dlg.close();
     if (!editing) { await new Promise((ok) => setTimeout(ok, 150)); selectTV(j.id); }
-    toast(editing ? "Guardado" : "TV añadida");
-  } catch (_) { $("formErr").textContent = "No se pudo contactar con el servidor"; }
+    toast(T(editing ? "Guardado" : "TV añadida"));
+  } catch (_) { $("formErr").textContent = T("No se pudo contactar con el servidor"); }
 });
 $("btnDelete").onclick = async () => {
-  if (!editing || !confirm(`¿Eliminar «${editing.name}» de TVHub? (No se toca la TV.)`)) return;
+  if (!editing || !confirm(T("¿Eliminar «{0}» de TVHub? (No se toca la TV.)", editing.name))) return;
   await fetch(withQ(`/api/tvs/${editing.id}`), { method: "DELETE" });
   const wasCur = editing.id === cur; dlg.close();
   if (wasCur) { cur = ""; videoStarted = false; stopVideo(); }
 };
 async function pair(pin) {
-  $("pairMsg").textContent = editing.type === "webos" ? "Acepta el aviso en la TV…" : "…";
+  $("pairMsg").textContent = editing.type === "webos" ? T("Acepta el aviso en la TV…") : "…";
   try {
     const r = await fetch(withQ(`/api/tvs/${editing.id}/pair`), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pin ? { pin } : {}) });
     const j = await r.json(); $("pairMsg").textContent = j.message || j.error || "";
-  } catch (_) { $("pairMsg").textContent = "No se pudo contactar con el servidor"; }
+  } catch (_) { $("pairMsg").textContent = T("No se pudo contactar con el servidor"); }
 }
 $("btnPairStart").onclick = () => pair();
 $("btnPairSend").onclick = () => { const p = $("fPin").value.trim(); if (p) pair(p); };
@@ -840,16 +1578,16 @@ $("btnPairSend").onclick = () => { const p = $("fPin").value.trim(); if (p) pair
 let ha = null;
 const haDlg = $("haDlg");
 function haDescribe(h) {
-  if (!h) return ["", "Sin datos"];
-  if (!h.available) return ["bad", "Falta la librería paho-mqtt en el servidor"];
-  if (!h.enabled) return ["", "Desactivado"];
-  if (h.connected) return ["ok", `Conectado a ${h.host}:${h.port}`];
-  return [h.error ? "bad" : "warn", h.error || `Conectando a ${h.host}:${h.port}…`];
+  if (!h) return ["", T("Sin datos")];
+  if (!h.available) return ["bad", T("Falta la librería paho-mqtt en el servidor")];
+  if (!h.enabled) return ["", T("Desactivado")];
+  if (h.connected) return ["ok", T("Conectado a {0}:{1}", h.host, h.port)];
+  return [h.error ? "bad" : "warn", h.error ? Tm(h.error) : T("Conectando a {0}:{1}…", h.host, h.port)];
 }
 function renderHA() {
   const [cls, txt] = haDescribe(ha);
   $("haDot").className = "dot " + cls; $("haSDot").className = "dot " + cls; $("haStatus").textContent = txt;
-  $("btnHA").title = "Home Assistant: " + txt;
+  $("btnHA").title = T("Home Assistant: {0}", txt);
 }
 async function refreshHA() {
   try { ha = await (await fetch(withQ("/api/ha"))).json(); renderHA(); } catch (_) { /* server restarting */ }
@@ -860,7 +1598,7 @@ function openHA() {
   $("haErr").textContent = "";
   const h = ha || {};
   $("haHost").value = h.host || ""; $("haPort").value = h.port && h.port !== 1883 ? h.port : "";
-  $("haUser").value = h.user || ""; $("haPass").value = ""; $("haPass").placeholder = h.has_password ? "•••••••• (sin cambios)" : "";
+  $("haUser").value = h.user || ""; $("haPass").value = ""; $("haPass").placeholder = h.has_password ? T("•••••••• (sin cambios)") : "";
   $("haTls").checked = !!h.tls; $("haIns").checked = !!h.insecure;
   $("haPrefix").value = h.prefix && h.prefix !== "tvhub" ? h.prefix : ""; $("haDisc").value = h.discovery && h.discovery !== "homeassistant" ? h.discovery : "";
   haTls(); $("haOff").hidden = !(h.enabled); renderHA(); haDlg.showModal(); $("haHost").focus();
@@ -870,13 +1608,13 @@ async function haPut(body, waitConnect) {
   try {
     const r = await fetch(withQ("/api/ha"), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const j = await r.json();
-    if (!r.ok) { $("haErr").textContent = j.error || "No se pudo guardar"; return; }
+    if (!r.ok) { $("haErr").textContent = Tm(j.error || "No se pudo guardar"); return; }
     ha = j; renderHA();
     if (waitConnect && j.enabled) {                      // watch the connection come up (or fail) for a few seconds
       for (let i = 0; i < 12 && !(ha.connected || ha.error); i++) { await new Promise((ok) => setTimeout(ok, 700)); await refreshHA(); }
-      if (ha.connected) { toast("Home Assistant conectado"); haDlg.close(); }
-    } else if (!j.enabled) { toast("Home Assistant desactivado"); haDlg.close(); }
-  } catch (_) { $("haErr").textContent = "No se pudo contactar con el servidor"; }
+      if (ha.connected) { toast(T("Home Assistant conectado")); haDlg.close(); }
+    } else if (!j.enabled) { toast(T("Home Assistant desactivado")); haDlg.close(); }
+  } catch (_) { $("haErr").textContent = T("No se pudo contactar con el servidor"); }
 }
 $("haForm").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -889,7 +1627,7 @@ $("haForm").addEventListener("submit", (e) => {
 $("haOff").onclick = () => haPut({ host: "", port: ha && ha.port, user: ha && ha.user, password: "", keep_password: true,
   tls: ha && ha.tls, insecure: ha && ha.insecure, prefix: ha && ha.prefix, discovery: ha && ha.discovery }, false);
 $("haCancel").onclick = () => haDlg.close();
-$("btnHA").onclick = openHA;
+$("btnHA").onclick = () => { setDrawer(false); openHA(); };
 
 // ------------------------------------------------------------------ wall (all TVs at once)
 // Android TVs show a screenshot refreshed every few seconds (one live H.264 stream per TV would load the sticks too much);
@@ -900,10 +1638,13 @@ function wallTile(t) {
   let w = wallTiles.get(t.id);
   if (w) return w;
   const el = document.createElement("button"); el.type = "button"; el.className = "wtile";
-  el.innerHTML = '<div class="wpic"><img alt="" hidden><div class="wph"><div class="wvol"></div><div class="wst"></div></div></div>' +
-    '<div class="wmeta"><span class="dot"></span><span class="wname"></span><span class="badge"></span><span class="wapp"></span></div>';
+  el.innerHTML = '<div class="wpic"><img alt="" hidden><div class="wph"><img class="wlogo" alt="" hidden><svg class="wtv" viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="6" width="24" height="16" rx="4"/><path d="M11 27h10"/></svg><div class="wst"></div><div class="wvol"></div></div></div>' +
+    '<div class="wmeta"><span class="dot"></span><span class="wname"></span><span class="badge"></span><span class="wapp"></span><span class="wpw" role="button" tabindex="0" title="Encender / apagar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1011.4 0"/></svg></span></div>';
   w = { id: t.id, el, img: el.querySelector("img"), url: "" };
   el.onclick = () => openFromWall(t.id);
+  const pw = el.querySelector(".wpw");
+  const onPw = (ev) => { ev.stopPropagation(); ev.preventDefault(); const x = tvs.find((q) => q.id === t.id); if (x) powerTV(x, x.state !== "device"); };
+  pw.onclick = onPw; pw.onkeydown = (ev) => { if (ev.key === "Enter" || ev.key === " ") onPw(ev); };
   wallTiles.set(t.id, w);
   return w;
 }
@@ -913,19 +1654,35 @@ function renderWall() {
   tvs.forEach((t, i) => {
     const w = wallTile(t), e = w.el;
     e.classList.toggle("active", t.id === cur);
-    e.title = `${t.name} · ${t.host}` + (i < 9 ? `  (tecla ${i + 1})` : "");
+    e.title = `${t.name} · ${t.host}` + (i < 9 ? `  (${T("tecla {0}", i + 1)})` : "");
     e.querySelector(".dot").className = "dot " + (t.state === "device" ? "ok" : t.state === "disconnected" ? "bad" : "warn");
     e.querySelector(".wname").textContent = t.name;
     e.querySelector(".badge").textContent = TYPE_LABEL[t.type] || t.type.toUpperCase();
     e.querySelector(".wapp").textContent = t.state === "device" ? (t.app || "") : "";
-    e.querySelector(".wvol").textContent = t.volume != null ? (t.muted ? "🔇 " : "") + t.volume : "";
-    e.querySelector(".wst").textContent = t.state === "device" ? (t.caps.snapshot && !w.url ? "Cargando captura…" : (t.caps.snapshot ? "" : (t.volume != null ? "volumen" : "Conectada")))
+    e.querySelector(".wvol").textContent = t.state === "device" && t.volume != null ? (t.muted ? T("🔇 mute") : T("Volumen {0}", t.volume)) : "";
+    e.querySelector(".wst").textContent = t.state === "device" ? (t.caps.snapshot && !w.url ? T("Cargando captura…") : (t.caps.snapshot ? "" : (t.app || T("Conectada"))))
       : (STATE_TXT[t.state] || t.state);
     w.img.hidden = !(w.url && t.state === "device");
+    e.querySelector(".wpw").title = t.state === "device" ? T("Apagar {0}", t.name) : T("Encender {0}", t.name);
+    const lg = e.querySelector(".wlogo");
+    if (w.img.hidden) setLogo(lg, t, e.querySelector(".wtv")); else { lg.hidden = true; lg.dataset.src = ""; }
     if (box.children[i] !== e) box.insertBefore(e, box.children[i] || null);
   });
+  let emp = box.querySelector(".wallempty");
+  if (!emp) {
+    emp = document.createElement("div"); emp.className = "wallempty";
+    emp.innerHTML = '<h3></h3><p></p><div class="btns"><button type="button" class="btn primary" data-go="add"></button><button type="button" class="btn" data-go="scan"></button></div>';
+    emp.querySelector('[data-go="add"]').onclick = () => $("btnAdd").click();
+    emp.querySelector('[data-go="scan"]').onclick = () => $("btnScan").click();
+  }
+  const adm = me && me.role === "admin";
+  emp.querySelector("h3").textContent = T("Aún no hay TVs");
+  emp.querySelector("p").textContent = adm ? T("Añade tu primera TV o búscalas en tu red.") : T("Pide a un administrador que añada las TVs.");
+  emp.querySelector('[data-go="add"]').textContent = T("+ Añadir TV"); emp.querySelector('[data-go="scan"]').textContent = T("Buscar");
+  emp.querySelector(".btns").hidden = !adm; emp.hidden = tvs.length > 0;
+  box.append(emp);
   let hint = box.querySelector(".wallhint");
-  if (!hint) { hint = document.createElement("p"); hint.className = "wallhint"; hint.textContent = "Clic en una TV para abrirla con imagen en vivo · teclas 1-9 · W o Esc para volver."; }
+  if (!hint) { hint = document.createElement("p"); hint.className = "wallhint"; hint.textContent = T("Clic en una TV para abrirla con imagen en vivo · teclas 1-9 · W alterna entre la pared y el mando."); }
   box.append(hint);
 }
 async function wallShot(t) {
@@ -964,6 +1721,33 @@ function openFromWall(id) { if (id !== cur) { cur = id; store.set("tvhub.tv", id
 $("btnWall").onclick = () => setWall(!wallOn);
 document.addEventListener("visibilitychange", () => { if (wallOn && !document.hidden) wallLoop(); });
 
+// ------------------------------------------------------------------ power all
+const allDlg = $("allDlg");
+async function powerAll(on) {
+  if (!on && !confirm(T("¿Apagar todas las TVs?"))) return;
+  $("allErr").textContent = ""; $("allList").innerHTML = ""; $("allOn").disabled = $("allOff").disabled = true;
+  try {
+    const r = await fetch(withQ("/api/power-all"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ on }) });
+    const j = await r.json();
+    if (!r.ok) { $("allErr").textContent = Tm(j.error || "No se pudo enviar"); return; }
+    if (!j.results.length) $("allErr").textContent = T("No hay TVs en la lista.");
+    j.results.forEach((x) => {
+      const li = document.createElement("li"), n = document.createElement("span"), m = document.createElement("span");
+      n.className = "nm"; n.textContent = x.name;
+      m.className = x.status === "ok" ? "ok" : x.status === "fail" ? "bad" : "";
+      m.textContent = (x.status === "ok" ? "✓ " : x.status === "fail" ? "✗ " : "– ") + (x.detail ? Tm(x.detail) : T(on ? "encendida" : "apagada"));
+      li.append(n, m); $("allList").appendChild(li);
+    });
+    const ok = j.results.filter((x) => x.status === "ok").length;
+    toast(T(on ? "Encendiendo {0} TV(s)" : "Apagando {0} TV(s)", ok));
+  } catch (_) { $("allErr").textContent = T("No se pudo contactar con el servidor"); }
+  finally { $("allOn").disabled = $("allOff").disabled = false; }
+}
+$("btnAll").onclick = () => { $("allErr").textContent = ""; $("allList").innerHTML = ""; allDlg.showModal(); };
+$("allOn").onclick = () => powerAll(true);
+$("allOff").onclick = () => powerAll(false);
+$("allClose").onclick = () => allDlg.close();
+
 // ------------------------------------------------------------------ discovery
 const scanDlg = $("scanDlg");
 const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -976,22 +1760,22 @@ async function openScan() {
 function scanRow(f) {
   const li = document.createElement("li");
   const sub = [f.label !== f.name ? f.label : "", f.model, f.host].filter(Boolean).join(" · ");
-  li.innerHTML = `<div><div class="nm">${esc(f.name)}</div><div class="sub">${esc(sub)}</div></div><div></div>${f.note && !f.added ? `<div class="note">${esc(f.note)}</div>` : ""}`;
+  li.innerHTML = `<div><div class="nm">${esc(f.name)}</div><div class="sub">${esc(sub)}</div></div><div></div>${f.note && !f.added ? `<div class="note">${esc(Tm(f.note))}</div>` : ""}`;
   const cell = li.children[1];
-  if (f.added) cell.innerHTML = '<span class="tag">Ya añadida</span>';
-  else if (!f.addable) cell.innerHTML = '<span class="tag">No soportada</span>';
+  if (f.added) cell.innerHTML = `<span class="tag">${esc(T("Ya añadida"))}</span>`;
+  else if (!f.addable) cell.innerHTML = `<span class="tag">${esc(T("No soportada"))}</span>`;
   else {
-    const b = document.createElement("button"); b.type = "button"; b.className = "btn primary"; b.textContent = "Añadir";
+    const b = document.createElement("button"); b.type = "button"; b.className = "btn primary"; b.textContent = T("Añadir");
     b.onclick = async () => {
       b.disabled = true;
       try {
         const r = await fetch(withQ("/api/tvs"), { method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: f.name.slice(0, 40), type: f.type, host: f.host, port: f.port }) });
         const j = await r.json();
-        if (!r.ok) { $("scanErr").textContent = j.error || "No se pudo añadir"; b.disabled = false; return; }
-        cell.innerHTML = '<span class="tag">Añadida ✓</span>'; toast("TV añadida");
+        if (!r.ok) { $("scanErr").textContent = Tm(j.error || "No se pudo añadir"); b.disabled = false; return; }
+        cell.innerHTML = `<span class="tag">${esc(T("Añadida ✓"))}</span>`; toast(T("TV añadida"));
         if (!curTV()) { await new Promise((ok) => setTimeout(ok, 150)); selectTV(j.id); }
-      } catch (_) { $("scanErr").textContent = "No se pudo contactar con el servidor"; b.disabled = false; }
+      } catch (_) { $("scanErr").textContent = T("No se pudo contactar con el servidor"); b.disabled = false; }
     };
     cell.appendChild(b);
   }
@@ -1005,23 +1789,114 @@ $("scanForm").addEventListener("submit", async (e) => {
   try {
     const r = await fetch(withQ("/api/discover"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cidrs: nets }) });
     const j = await r.json();
-    if (!r.ok) { $("scanErr").textContent = j.error || "No se pudo buscar"; return; }
+    if (!r.ok) { $("scanErr").textContent = Tm(j.error || "No se pudo buscar"); return; }
     store.set("tvhub.nets", nets);
     j.found.forEach((f) => $("scanList").appendChild(scanRow(f)));
     $("scanFoot").hidden = false;
     $("scanFoot").textContent = j.found.length
-      ? `${j.found.length} dispositivo(s) en ${j.scanned} direcciones (${j.seconds} s). Si falta tu TV: enciéndela, activa ADB / el control por red y repite.`
-      : `No se encontró ninguna TV en ${j.scanned} direcciones. Comprueba que está encendida, en esa red y con ADB o el control por red activado.`;
-  } catch (_) { $("scanErr").textContent = "No se pudo contactar con el servidor"; }
+      ? T("{0} dispositivo(s) en {1} direcciones ({2} s). Si falta tu TV: enciéndela, activa ADB / el control por red y repite.", j.found.length, j.scanned, j.seconds)
+      : T("No se encontró ninguna TV en {0} direcciones. Comprueba que está encendida, en esa red y con ADB o el control por red activado.", j.scanned);
+  } catch (_) { $("scanErr").textContent = T("No se pudo contactar con el servidor"); }
   finally { $("scanBusy").hidden = true; $("scanGo").disabled = false; }
 });
 $("scanClose").onclick = () => scanDlg.close();
 $("btnScan").onclick = openScan;
 
+// ------------------------------------------------------------------ account: role, password, users
+function applyRole() {
+  const admin = me.role === "admin";
+  ["btnAdd", "btnScan", "btnEdit", "btnHA", "btnUsers"].forEach((id) => { $(id).hidden = !admin; });
+  $("whoName").textContent = me.username; $("whoAv").textContent = me.username.slice(0, 1);
+  $("whoRole").textContent = T(admin ? "Administrador" : "Usuario");
+  if (wallOn) renderWall();
+}
+$("brand").onclick = () => setWall(true);
+$("brand").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setWall(true); } });
+$("btnLogout").onclick = async () => { await fetch("/api/auth/logout", { method: "POST" }); location.reload(); };
+
+const pwDlg = $("pwDlg"); let pwTarget = null;
+function openPw(target) {
+  pwTarget = target || null; setDrawer(false);
+  $("pwTitle").textContent = pwTarget ? T("Restablecer la contraseña de {0}", pwTarget.username) : T("Cambiar contraseña");
+  $("pwHint").textContent = pwTarget ? T("Se cerrarán todas sus sesiones.") : T("Al cambiarla se cierran tus otras sesiones.");
+  $("pwCurRow").hidden = !!pwTarget;
+  $("pwCur").value = $("pwNew").value = $("pwNew2").value = ""; $("pwErr").textContent = "";
+  pwDlg.showModal(); (pwTarget ? $("pwNew") : $("pwCur")).focus();
+}
+$("btnPw").onclick = () => openPw(null);
+$("pwCancel").onclick = () => pwDlg.close();
+$("pwForm").addEventListener("submit", async (e) => {
+  e.preventDefault(); $("pwErr").textContent = "";
+  if ($("pwNew").value !== $("pwNew2").value) { $("pwErr").textContent = T("Las contraseñas no coinciden"); return; }
+  const url = pwTarget ? `/api/users/${pwTarget.id}` : "/api/auth/password";
+  const body = pwTarget ? { password: $("pwNew").value } : { current: $("pwCur").value, password: $("pwNew").value };
+  const r = await fetch(url, { method: pwTarget ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { $("pwErr").textContent = Tm(j.error || "No se pudo guardar"); return; }
+  if (!pwTarget && j.csrf) csrf = j.csrf;               // this browser got a fresh session
+  $("pwCur").value = $("pwNew").value = $("pwNew2").value = "";
+  pwDlg.close(); toast(T("Contraseña cambiada"));
+});
+
+const usersDlg = $("usersDlg");
+const uErr = (m) => { $("usersErr").textContent = m ? Tm(m) : ""; };
+async function api(method, url, body) {
+  const r = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { uErr(j.error || "No se pudo"); return null; }
+  uErr(""); return j;
+}
+async function loadUsers() {
+  const j = await api("GET", "/api/users"); if (!j) return;
+  const ul = $("userList"); ul.textContent = "";
+  for (const u of j.users) {
+    const li = document.createElement("li"); if (u.disabled) li.className = "off";
+    const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = u.username + (u.username === me.username ? " · " + T("tú") : "") + (u.disabled ? " · " + T("desactivado") : "");
+    const sel = document.createElement("select");
+    [["user", "Usuario"], ["admin", "Administrador"]].forEach(([v, n]) => { const o = document.createElement("option"); o.value = v; o.textContent = T(n); sel.append(o); });
+    sel.value = u.role; sel.onchange = async () => { if (await api("PATCH", `/api/users/${u.id}`, { role: sel.value })) toast(T("Rol actualizado")); loadUsers(); };
+    const mk = (label, fn, cls) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn" + (cls ? " " + cls : ""); b.textContent = T(label); b.onclick = fn; return b; };
+    li.append(nm, sel,
+      mk("Restablecer clave", () => openPw(u)),
+      mk(u.disabled ? "Activar" : "Desactivar", async () => { if (await api("PATCH", `/api/users/${u.id}`, { disabled: !u.disabled })) loadUsers(); }),
+      mk("Eliminar", async () => { if (confirm(T("¿Eliminar al usuario «{0}»?", u.username)) && await api("DELETE", `/api/users/${u.id}`)) loadUsers(); }, "danger"));
+    ul.append(li);
+  }
+  const tl = $("tokList"); tl.textContent = "";
+  if (!j.tokens.length) { const li = document.createElement("li"); li.textContent = T("Sin tokens"); li.style.color = "var(--dim)"; tl.append(li); }
+  for (const t of j.tokens) {
+    const li = document.createElement("li"), nm = document.createElement("span"); nm.className = "nm";
+    nm.textContent = t.name + " · " + (t.last_used ? T("usado {0}", new Date(t.last_used * 1000).toLocaleDateString()) : T("sin usar"));
+    const b = document.createElement("button"); b.type = "button"; b.className = "btn danger"; b.textContent = T("Revocar");
+    b.onclick = async () => { if (confirm(T("¿Revocar el token «{0}»? Las integraciones que lo usen dejarán de funcionar.", t.name)) && await api("DELETE", `/api/tokens/${t.id}`)) loadUsers(); };
+    li.append(nm, b); tl.append(li);
+  }
+}
+$("btnUsers").onclick = () => { setDrawer(false); uErr(""); $("tokNew").hidden = true; usersDlg.showModal(); loadUsers(); };
+$("usersClose").onclick = () => { $("tokNew").hidden = true; usersDlg.close(); };
+$("nuAdd").onclick = async () => {
+  const j = await api("POST", "/api/users", { username: $("nuUser").value, password: $("nuPass").value, role: $("nuRole").value });
+  if (j) { $("nuUser").value = $("nuPass").value = ""; toast(T("Usuario creado")); loadUsers(); }
+};
+$("tkAdd").onclick = async () => {
+  const j = await api("POST", "/api/tokens", { name: $("tkName").value });
+  if (!j) return;
+  $("tkName").value = "";
+  const box = $("tokNew"); box.textContent = T("Copia este token ahora; no se volverá a mostrar:");
+  const c = document.createElement("code"); c.textContent = j.token; box.append(c); box.hidden = false; loadUsers();
+};
+
 // ------------------------------------------------------------------ boot
 fetch(withQ("/api/tvs")).then((r) => r.json()).then((j) => { vidaaOK = j.vidaa; webosOK = j.webos !== false; }).catch(() => {});
-refreshHA(); setInterval(refreshHA, 8000);
+if (me.role === "admin") { refreshHA(); setInterval(refreshHA, 8000); }
+applyRole();
+langHooks.push(() => { typeChanged(); liveChanged(); renderHA(); renderAll(); loadInputs(); applyRole();
+  if (wallOn) { const hint = $("wall").querySelector(".wallhint"); if (hint) hint.textContent = T("Clic en una TV para abrirla con imagen en vivo · teclas 1-9 · W alterna entre la pared y el mando."); }
+  if (editing && dlg.open) $("dlgTitle").textContent = T("Ajustes de {0}", editing.name); });
 connectControl(); requestAnimationFrame(render); renderAll();
+setWall(true);                                           // the wall is the home page
+}
+init();
 </script>
 </body>
 </html>

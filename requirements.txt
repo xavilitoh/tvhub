@@ -2,3 +2,4 @@ aiohttp>=3.9,<4
 vidaa-control>=1.1,<2
 aiowebostv>=0.10,<1
 paho-mqtt>=2.0,<3
+argon2-cffi>=23.1,<26

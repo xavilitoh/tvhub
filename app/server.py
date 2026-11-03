@@ -9,14 +9,17 @@ Drivers
 
 HTTP / WebSocket
   /api/tvs ...        list, add, edit, delete, pair, apps, launch, snapshot
+  /api/power-all      turn every TV on or off
   /api/discover       find TVs on the network (GET: suggested networks, POST: scan)
   /ws/control         commands in (each carries the target TV id), status of every TV out
   /ws/video?tv=<id>   live video of an android TV, one WebSocket message per frame
 """
 import asyncio
+import hmac
 import json
 import os
 import re
+import secrets
 import sys
 import time
 import uuid
@@ -24,6 +27,9 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from aiohttp import web, WSMsgType
+
+import icons
+import security as sec
 
 DATA = os.environ.get("DATA_DIR", "/data")
 ADB = os.environ.get("ADB_BIN", "adb")
@@ -136,7 +142,8 @@ class Driver:
     def status(self):
         return {"id": self.id, "name": self.cfg.get("name") or self.host, "type": self.type,
                 "host": self.host, "port": self.port, "state": self.state, "model": self.model,
-                "caps": self.caps, "volume_via": self.cfg.get("volume_via") or "",
+                "caps": {**self.caps, "inputs": self.has_inputs()}, "volume_via": self.cfg.get("volume_via") or "",
+                "hdmi": int(self.cfg.get("hdmi") or 0), "tv": bool(self.cfg.get("tv")),
                 "mac": self.cfg.get("mac") or "", "tls": self.cfg.get("tls", True), **self.extra()}
 
     async def publish(self, force=False):
@@ -184,6 +191,24 @@ class Driver:
 
     async def set_volume(self, level):
         raise NotImplementedError
+
+    # video inputs (HDMI…): drivers that can switch them override these
+    def has_inputs(self):
+        return False
+
+    async def inputs(self):
+        return []
+
+    async def set_input(self, iid):
+        raise NotImplementedError
+
+    def hdmi_id(self, n):
+        """Input id of this TV's HDMI port n (1-4), used by the "show this Stick on the TV" button."""
+        return ""
+
+    async def app_icon(self, pkg):
+        """(bytes, content_type) of the icon the TV itself has for an app, if it offers one."""
+        return None
 
 
 # --------------------------------------------------------------------------- H.264 framing
@@ -498,6 +523,21 @@ class AndroidDriver(Driver):
     async def power(self, on):
         self.key("WAKEUP" if on else "SLEEP")
 
+    # An Android *TV set* (Sony, Philips…) has HDMI inputs reachable with key events; a Fire / Google TV stick has none.
+    def has_inputs(self):
+        return bool(self.cfg.get("tv"))
+
+    async def inputs(self):
+        return [{"id": "TV_INPUT", "name": "Entradas"}] + [{"id": f"TV_INPUT_HDMI_{n}", "name": f"HDMI {n}"} for n in range(1, 5)]
+
+    async def set_input(self, iid):
+        if not KEY_RE.match(iid) or not iid.startswith("TV_INPUT"):
+            raise ValueError("Entrada no válida")
+        self.key(iid)
+
+    def hdmi_id(self, n):
+        return f"TV_INPUT_HDMI_{int(n)}"
+
     async def snapshot(self):
         if self.state != "device":
             return None
@@ -545,6 +585,24 @@ class VidaaDriver(Driver):
         self.client = None
         self.playing = False
         self.pair_msg = ""
+
+    def has_inputs(self):
+        return True
+
+    async def inputs(self):
+        return [{"id": "tv", "name": "TV"}] + [{"id": f"hdmi{n}", "name": f"HDMI {n}"} for n in range(1, 5)] + [{"id": "av", "name": "AV"}]
+
+    async def set_input(self, iid):
+        if self.client is None or self.state != "device":
+            raise RuntimeError("La TV no está conectada")
+        if iid not in {"tv", "av", "hdmi1", "hdmi2", "hdmi3", "hdmi4"}:
+            raise ValueError("Entrada no válida")
+        ok = await asyncio.get_running_loop().run_in_executor(self.pool, self.client.set_source, iid)
+        if not ok:
+            raise RuntimeError("La TV no aceptó el cambio de entrada")
+
+    def hdmi_id(self, n):
+        return f"hdmi{int(n)}"
 
     def extra(self):
         c = self.client
@@ -869,6 +927,36 @@ class WebosDriver(Driver):
         res.sort(key=lambda x: (not x["known"], x["name"].lower()))
         return res
 
+    def has_inputs(self):
+        return True
+
+    async def inputs(self):
+        c = self.client
+        if c is None or self.state != "device":
+            return []
+        res = []
+        for x in (c.tv_state.inputs or {}).values():
+            if x.get("id"):
+                res.append({"id": str(x["id"]), "name": str(x.get("label") or x["id"]), "connected": bool(x.get("connected", True))})
+        return res
+
+    async def set_input(self, iid):
+        c = self.client
+        if c is None or self.state != "device":
+            raise RuntimeError("La TV no está conectada")
+        if not re.match(r"^[A-Za-z0-9_\-]{1,40}$", iid):
+            raise ValueError("Entrada no válida")
+        await c.set_input(iid)
+
+    def hdmi_id(self, n):
+        return f"HDMI_{int(n)}"
+
+    async def app_icon(self, pkg):
+        c = self.client
+        a = ((c.tv_state.apps or {}).get(pkg) or {}) if c else {}
+        url = a.get("largeIcon") or a.get("icon")
+        return await icons.fetch_remote(url, self.host) if url else None
+
     async def launch(self, pkg):
         c = self.client
         if c is None or self.state != "device" or not PKG_RE.match(pkg):
@@ -943,7 +1031,14 @@ def clean_cfg(d, old=None):
         raise ValueError("MAC no válida (formato AA:BB:CC:DD:EE:FF)")
     name = str(d.get("name", old.get("name", "")) or "").strip()[:40] or host
     via = str(d.get("volume_via", old.get("volume_via", "")) or "")
+    try:
+        hdmi = int(d.get("hdmi", old.get("hdmi", 0)) or 0)
+    except (TypeError, ValueError):
+        hdmi = 0
+    if not 0 <= hdmi <= 4:
+        raise ValueError("Entrada HDMI no válida")
     return {"id": old.get("id") or new_id(), "name": name, "type": typ, "host": host, "port": port,
+            "hdmi": hdmi, "tv": bool(d.get("tv", old.get("tv", False))),
             "mac": mac.upper().replace("-", ":") if mac else "",
             "tls": bool(d.get("tls", old.get("tls", True))), "volume_via": via}
 
@@ -990,24 +1085,314 @@ def route(tv, key):
 
 # --------------------------------------------------------------------------- HTTP
 
-def authorized(request):
-    if not TOKEN:
-        return True
-    return request.query.get("token") == TOKEN or request.cookies.get("tvhub") == TOKEN
+SEC = None                      # sec.Security, created at startup
+_WS = {}                        # user id -> {(websocket, session hash)}: closed when the session / user goes away
+SAFE = ("GET", "HEAD", "OPTIONS")
+PUBLIC = {("GET", "/"), ("GET", "/api/auth/status"), ("POST", "/api/auth/login"), ("POST", "/api/auth/setup")}
+ADMIN_ONLY = {("POST", "/api/tvs"), ("PATCH", "/api/tvs/{id}"), ("DELETE", "/api/tvs/{id}"), ("POST", "/api/tvs/{id}/pair"),
+              ("GET", "/api/discover"), ("POST", "/api/discover"), ("GET", "/api/ha"), ("PUT", "/api/ha")}
+JSON_NOSTORE = {"Cache-Control": "no-store"}
+
+
+def jerr(msg, status=400, **kw):
+    return web.json_response({"error": msg, **kw}, status=status, headers=JSON_NOSTORE)
+
+
+def kick(uid=None, sid=None, keep=None):
+    """Close live WebSockets of a user (or of one session) whose access was revoked."""
+    for u in ([uid] if uid else list(_WS)):
+        for item in list(_WS.get(u, ())):
+            if (sid is None or item[1] == sid) and item[1] != keep:
+                _WS[u].discard(item)
+                asyncio.ensure_future(item[0].close(code=4401, message=b"session ended"))
+
+
+def authenticate(request):
+    """-> principal dict or None. Sessions (browser) or API tokens (integrations, `Authorization: Bearer ...`)."""
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        raw = auth[7:].strip()
+        t = SEC.api_token(raw)
+        if t:
+            return {"kind": "api", "name": "token:" + t["name"], "role": "user", "uid": ""}
+        if TOKEN and hmac.compare_digest(raw, TOKEN):
+            return {"kind": "api", "name": "token:env", "role": "user", "uid": ""}
+        return None
+    if TOKEN and request.query.get("token") and hmac.compare_digest(request.query["token"], TOKEN):
+        return {"kind": "api", "name": "token:env", "role": "user", "uid": ""}     # legacy ?token=, kept for old integrations
+    h, sess = SEC.session_for(request.cookies.get(SEC.cookie_name(request), ""))
+    if not sess:
+        return None
+    u = SEC.users.get(sess["uid"])
+    return {"kind": "session", "name": u["username"], "role": u["role"], "uid": u["id"], "sid": h, "csrf": sess["csrf"]}
+
+
+@web.middleware
+async def headers_mw(request, handler):
+    try:
+        resp = await handler(request)
+    except web.HTTPException as e:
+        resp = e
+    if not isinstance(resp, web.WebSocketResponse):
+        for k, v in sec.security_headers(SEC.is_secure(request) if SEC else False).items():
+            resp.headers.setdefault(k, v)
+        if request.path.startswith("/api/") and "Cache-Control" not in resp.headers:
+            resp.headers["Cache-Control"] = "no-store"
+    if isinstance(resp, web.HTTPException):
+        raise resp
+    return resp
 
 
 @web.middleware
 async def auth_mw(request, handler):
-    if not authorized(request):
-        return web.Response(status=401, text="Missing or wrong token. Open /?token=... once.")
-    resp = await handler(request)
-    if TOKEN and request.query.get("token") == TOKEN and not isinstance(resp, web.WebSocketResponse):
-        resp.set_cookie("tvhub", TOKEN, httponly=True, samesite="Strict")
-    return resp
+    route = request.match_info.route
+    canon = getattr(getattr(route, "resource", None), "canonical", request.path)
+    key = (request.method, canon)
+    if key in PUBLIC:
+        request["pr"] = None
+        return await handler(request)
+    if not SEC.has_users():
+        return jerr("setup_required", 403)
+    pr = authenticate(request)
+    if pr is None:
+        return jerr("auth_required", 401)
+    if request.path.startswith("/ws/") or request.method not in SAFE:
+        if not SEC.origin_ok(request):
+            SEC.audit("origin_rejected", request, user=pr["name"], origin=request.headers.get("Origin"))
+            return jerr("Origen no permitido", 403)
+        if pr["kind"] == "session" and request.method not in SAFE and \
+                not hmac.compare_digest(request.headers.get("X-CSRF-Token", ""), pr["csrf"]):
+            SEC.audit("csrf_rejected", request, user=pr["name"])
+            return jerr("Sesión no válida; recarga la página", 403)
+    if (key in ADMIN_ONLY or canon.startswith("/api/users") or canon.startswith("/api/tokens")) and pr["role"] != "admin":
+        SEC.audit("forbidden", request, user=pr["name"], path=request.path)
+        return jerr("Solo un administrador puede hacer esto", 403)
+    request["pr"] = pr
+    return await handler(request)
+
+
+INDEX_HTML = None
 
 
 async def index(request):
-    return web.FileResponse(os.path.join(STATIC, "index.html"))
+    global INDEX_HTML
+    if INDEX_HTML is None or os.environ.get("TVHUB_DEV"):
+        with open(os.path.join(STATIC, "index.html"), encoding="utf-8") as f:
+            INDEX_HTML = f.read()
+    nonce = secrets.token_urlsafe(16)
+    html = INDEX_HTML.replace("<script>", f'<script nonce="{nonce}">')
+    resp = web.Response(text=html, content_type="text/html", charset="utf-8")
+    for k, v in sec.security_headers(SEC.is_secure(request), request.host, nonce).items():
+        resp.headers[k] = v
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+def set_session_cookie(request, resp, token, remember=False):
+    resp.set_cookie(SEC.cookie_name(request), token, httponly=True, samesite="Strict", secure=SEC.is_secure(request),
+                    path="/", max_age=(30 * 86400 if remember else None))
+
+
+def clear_session_cookie(request, resp):
+    resp.del_cookie(SEC.cookie_name(request), path="/")
+
+
+async def read_json(request):
+    try:
+        d = await request.json()
+    except Exception:                                   # noqa: BLE001 - any malformed body is a 400
+        raise web.HTTPBadRequest(text=json.dumps({"error": "Petición no válida"}), content_type="application/json")
+    if not isinstance(d, dict):
+        raise web.HTTPBadRequest(text=json.dumps({"error": "Petición no válida"}), content_type="application/json")
+    return d
+
+
+def me_payload(pr, extra=None):
+    return {"authenticated": True, "user": {"username": pr["name"], "role": pr["role"]}, "csrf": pr.get("csrf", ""), **(extra or {})}
+
+
+async def api_auth_status(request):
+    if not SEC.has_users():
+        return web.json_response({"setup_required": True, "authenticated": False}, headers=JSON_NOSTORE)
+    pr = authenticate(request)
+    if pr and pr["kind"] == "session":
+        return web.json_response(me_payload(pr, {"setup_required": False}), headers=JSON_NOSTORE)
+    return web.json_response({"setup_required": False, "authenticated": False}, headers=JSON_NOSTORE)
+
+
+async def _start_session(request, u, remember=False):
+    token, s = SEC.create_session(u, request, remember)
+    resp = web.json_response({"authenticated": True, "user": {"username": u["username"], "role": u["role"]}, "csrf": s["csrf"],
+                              "setup_required": False}, headers=JSON_NOSTORE)
+    set_session_cookie(request, resp, token, remember)
+    return resp
+
+
+async def api_setup(request):
+    """Create the first administrator. Only possible while no user exists and with the code printed in the log."""
+    ip = SEC.client_ip(request)
+    d = await read_json(request)
+    wait = SEC.limiter.wait(ip, "setup")
+    if wait:
+        return jerr(f"Demasiados intentos. Espera {wait} s", 429, retry_after=wait)
+    async with SEC.setup_lock:
+        if SEC.has_users():
+            return jerr("TVHub ya está configurado", 409)
+        norm = lambda x: re.sub(r"[^A-Z0-9]", "", str(x or "").upper())          # noqa: E731
+        if not hmac.compare_digest(norm(d.get("code")).encode(), norm(SEC.setup_code).encode()):
+            SEC.limiter.fail(ip, "setup")
+            SEC.audit("setup_bad_code", request)
+            return jerr("Código de configuración incorrecto", 403)
+        username = sec.norm_username(d.get("username"))
+        pw = d.get("password")
+        err = sec.check_username(username) or sec.check_password(pw, username)
+        if err:
+            return jerr(err)
+        u = await SEC.add_user(username, pw, "admin")
+        SEC.setup_code = ""
+    SEC.audit("setup_admin_created", request, user=username)
+    return await _start_session(request, u)
+
+
+async def api_login(request):
+    ip = SEC.client_ip(request)
+    d = await read_json(request)
+    username = sec.norm_username(d.get("username"))[:64]
+    pw = d.get("password")
+    if not isinstance(pw, str) or not pw or len(pw) > 1024:
+        return jerr("Usuario o contraseña incorrectos", 401)
+    wait = SEC.limiter.wait(ip, username)
+    if wait:
+        SEC.audit("login_blocked", request, user=username)
+        return web.json_response({"error": f"Demasiados intentos. Espera {wait} s", "retry_after": wait}, status=429,
+                                 headers={**JSON_NOSTORE, "Retry-After": str(wait)})
+    u = await SEC.verify_login(username, pw)
+    if u is None:
+        SEC.limiter.fail(ip, username)
+        SEC.audit("login_failed", request, user=username)
+        return jerr("Usuario o contraseña incorrectos", 401)
+    SEC.limiter.success(ip, username)
+    SEC.audit("login", request, user=username)
+    return await _start_session(request, u, bool(d.get("remember")))
+
+
+async def api_logout(request):
+    pr = request["pr"]
+    if pr["kind"] == "session":
+        SEC.revoke(pr["sid"])
+        kick(sid=pr["sid"])
+    SEC.audit("logout", request, user=pr["name"])
+    resp = web.json_response({"ok": True}, headers=JSON_NOSTORE)
+    clear_session_cookie(request, resp)
+    return resp
+
+
+async def api_password(request):
+    pr = request["pr"]
+    if pr["kind"] != "session":
+        return jerr("Solo desde una sesión de usuario", 403)
+    d = await read_json(request)
+    ip = SEC.client_ip(request)
+    u = SEC.users[pr["uid"]]
+    wait = SEC.limiter.wait(ip, u["username"])
+    if wait:
+        return jerr(f"Demasiados intentos. Espera {wait} s", 429, retry_after=wait)
+    cur, new = d.get("current"), d.get("password")
+    if not isinstance(cur, str) or await SEC.verify_login(u["username"], cur) is None:
+        SEC.limiter.fail(ip, u["username"])
+        SEC.audit("password_change_failed", request, user=u["username"])
+        return jerr("La contraseña actual no es correcta", 403)
+    err = sec.check_password(new, u["username"])
+    if err:
+        return jerr(err)
+    await SEC.set_password(u, new)
+    kick(uid=u["id"])
+    SEC.audit("password_changed", request, user=u["username"])
+    return await _start_session(request, u)             # all older sessions are void; this browser gets a fresh one
+
+
+async def api_users(request):
+    return web.json_response({"users": [SEC.public(u) for u in SEC.users.values()],
+                              "tokens": [{"id": t["id"], "name": t["name"], "created": t["created"], "last_used": t.get("last_used", 0)}
+                                         for t in SEC.tokens.values()]}, headers=JSON_NOSTORE)
+
+
+async def api_user_add(request):
+    d = await read_json(request)
+    username = sec.norm_username(d.get("username"))
+    role = d.get("role", "user")
+    err = sec.check_username(username) or (None if role in sec.ROLES else "Rol no válido") or sec.check_password(d.get("password"), username)
+    if err:
+        return jerr(err)
+    if SEC.find(username):
+        return jerr("Ya existe un usuario con ese nombre", 409)
+    u = await SEC.add_user(username, d["password"], role)
+    SEC.audit("user_created", request, user=request["pr"]["name"], target=username, role=role)
+    return web.json_response(SEC.public(u), headers=JSON_NOSTORE)
+
+
+async def api_user_edit(request):
+    u = SEC.users.get(request.match_info["id"])
+    if not u:
+        return jerr("Usuario no encontrado", 404)
+    d = await read_json(request)
+    me = request["pr"]
+    if "role" in d:
+        if d["role"] not in sec.ROLES:
+            return jerr("Rol no válido")
+        if u["role"] == "admin" and d["role"] != "admin" and len(SEC.admins()) <= 1:
+            return jerr("No puedes quitar al último administrador")
+        if d["role"] != u["role"]:
+            u["role"] = d["role"]
+            SEC.save_users()
+            kick(uid=u["id"])
+            SEC.audit("role_changed", request, user=me["name"], target=u["username"], role=d["role"])
+    if "disabled" in d:
+        dis = bool(d["disabled"])
+        if dis and u["role"] == "admin" and len(SEC.admins()) <= 1:
+            return jerr("No puedes desactivar al último administrador")
+        u["disabled"] = dis
+        SEC.save_users()
+        if dis:
+            SEC.revoke_user(u["id"])
+            kick(uid=u["id"])
+        SEC.audit("user_disabled" if dis else "user_enabled", request, user=me["name"], target=u["username"])
+    if d.get("password"):
+        err = sec.check_password(d["password"], u["username"])
+        if err:
+            return jerr(err)
+        await SEC.set_password(u, d["password"])
+        kick(uid=u["id"])
+        SEC.audit("password_reset", request, user=me["name"], target=u["username"])
+    return web.json_response(SEC.public(u), headers=JSON_NOSTORE)
+
+
+async def api_user_delete(request):
+    u = SEC.users.get(request.match_info["id"])
+    if not u:
+        return jerr("Usuario no encontrado", 404)
+    if u["role"] == "admin" and len(SEC.admins()) <= 1:
+        return jerr("No puedes quitar al último administrador")
+    SEC.delete_user(u["id"])
+    kick(uid=u["id"])
+    SEC.audit("user_deleted", request, user=request["pr"]["name"], target=u["username"])
+    return web.json_response({"ok": True}, headers=JSON_NOSTORE)
+
+
+async def api_token_add(request):
+    d = await read_json(request)
+    name = re.sub(r"[^\w .@-]", "", str(d.get("name", "")))[:40].strip()
+    if not name:
+        return jerr("Ponle un nombre al token")
+    raw, rec = SEC.create_api_token(name)
+    SEC.audit("api_token_created", request, user=request["pr"]["name"], target=name)
+    return web.json_response({"token": raw, "id": rec["id"], "name": rec["name"]}, headers=JSON_NOSTORE)
+
+
+async def api_token_delete(request):
+    ok = SEC.delete_api_token(request.match_info["id"])
+    SEC.audit("api_token_revoked", request, user=request["pr"]["name"], target=request.match_info["id"])
+    return web.json_response({"ok": ok}, headers=JSON_NOSTORE)
 
 
 async def broadcast_list():
@@ -1054,6 +1439,7 @@ async def api_ha_put(request):
     except ValueError as e:
         return web.json_response({"error": str(e)}, status=400)
     ha.configure(cfg)
+    SEC.audit("ha_configured", request, user=request["pr"]["name"])
     return web.json_response(ha.status())
 
 
@@ -1070,6 +1456,7 @@ async def api_add(request):
     d = DRIVERS[cfg["type"]](cfg)
     hub.tvs[cfg["id"]] = d
     hub.save()
+    SEC.audit("tv_added", request, user=request["pr"]["name"], target=cfg["name"], host=cfg["host"])
     await d.start()
     await broadcast_list()
     return web.json_response(d.status())
@@ -1099,6 +1486,7 @@ async def api_edit(request):
 
 async def api_delete(request):
     tv = get_tv(request)
+    SEC.audit("tv_deleted", request, user=request["pr"]["name"], target=tv.cfg.get("name"), host=tv.cfg.get("host"))
     await tv.stop()
     hub.tvs.pop(tv.id, None)
     for other in hub.tvs.values():            # nobody may keep routing volume to a TV that is gone
@@ -1162,10 +1550,111 @@ async def api_volume(request):
     return web.json_response({"ok": True, "level": level})
 
 
+async def power_one(tv, on):
+    """Power one TV for the "all TVs" button. Returns (status, detail): status is ok / skipped / fail."""
+    mac = tv.cfg.get("mac")
+    if tv.type == "android":
+        if tv.state != "device":
+            return "fail", "ADB no responde (¿en reposo profundo o sin red?)"
+        await tv.power(on)
+        return "ok", ""
+    if on:
+        if tv.state == "device":
+            return "skipped", "ya estaba encendida"
+        if not mac:
+            return "fail", "no se puede encender sin su MAC (Wake-on-LAN); añádela en Ajustes"
+        await asyncio.get_running_loop().run_in_executor(None, wake_on_lan, mac)
+        return "ok", "Wake-on-LAN enviado; tarda unos segundos"
+    if tv.state != "device":
+        return "skipped", "ya estaba apagada o sin conexión"
+    await tv.power(False)
+    return "ok", ""
+
+
+async def api_power_all(request):
+    d = await request.json()
+    on = bool(d.get("on"))
+
+    async def one(tv):
+        try:
+            st, detail = await asyncio.wait_for(power_one(tv, on), 15)
+        except asyncio.TimeoutError:
+            st, detail = "fail", "la TV no respondió a tiempo"
+        except Exception as e:            # noqa: BLE001 — one TV failing must not stop the others
+            st, detail = "fail", str(e) or e.__class__.__name__
+        return {"id": tv.id, "name": tv.cfg.get("name", ""), "type": tv.type, "status": st, "detail": detail}
+
+    results = await asyncio.gather(*(one(tv) for tv in list(hub.tvs.values())))
+    return web.json_response({"on": on, "results": results})
+
+
 async def api_power(request):
     tv = get_tv(request)
-    await tv.power(bool((await request.json()).get("on")))
+    on = bool((await request.json()).get("on"))
+    try:
+        status, detail = await asyncio.wait_for(power_one(tv, on), 15)
+    except asyncio.TimeoutError:
+        status, detail = "fail", "la TV no respondió a tiempo"
+    return web.json_response({"ok": status != "fail", "status": status, "detail": detail})
+
+
+async def api_inputs(request):
+    tv = get_tv(request)
+    return web.json_response(await tv.inputs() if tv.has_inputs() else [])
+
+
+async def api_set_input(request):
+    tv = get_tv(request)
+    iid = str((await request.json()).get("id", ""))
+    if not tv.has_inputs():
+        return web.json_response({"error": "Esta TV no permite cambiar de entrada"}, status=400)
+    try:
+        await tv.set_input(iid)
+    except (ValueError, RuntimeError) as e:
+        return web.json_response({"error": str(e)}, status=400)
     return web.json_response({"ok": True})
+
+
+async def api_show(request):
+    """Switch the TV that a Stick's volume is routed to onto the HDMI port the Stick is plugged into."""
+    stick = get_tv(request)
+    target = hub.tvs.get(stick.cfg.get("volume_via") or "")
+    n = int(stick.cfg.get("hdmi") or 0)
+    if target is None or not n:
+        return web.json_response({"error": "Indica en Ajustes la TV y el HDMI donde está conectado este dispositivo"}, status=400)
+    if not target.has_inputs():
+        return web.json_response({"error": f"«{target.cfg.get('name')}» no permite cambiar de entrada"}, status=400)
+    try:
+        await target.set_input(target.hdmi_id(n))
+    except (ValueError, RuntimeError) as e:
+        return web.json_response({"error": str(e)}, status=400)
+    return web.json_response({"ok": True, "tv": target.cfg.get("name"), "hdmi": n})
+
+
+async def api_appicon(request):
+    tv = get_tv(request)
+    pkg = request.match_info["pkg"]
+    headers = {"Cache-Control": "public, max-age=86400"}
+    miss = web.Response(status=404, headers={"Cache-Control": "public, max-age=3600"})
+    if not PKG_RE.match(pkg):
+        return miss
+    m = icons.HDMI_RE.search(pkg.lower())
+    if m:
+        return web.Response(body=icons.hdmi_tile(m.group(1)), content_type="image/svg+xml", headers=headers)
+    own = await tv.app_icon(pkg)                      # the TV's own icon beats a generic brand logo
+    if own:
+        return web.Response(body=own[0], content_type=own[1], headers=headers)
+    name = ""
+    try:
+        name = next((a["name"] for a in (await tv.apps()) if a["pkg"] == pkg), "")
+    except Exception:                                 # noqa: BLE001
+        pass
+    b = icons.brand_for(pkg, name)
+    if b:
+        svg = await icons.brand_tile(os.path.join(DATA, "icons"), *b)
+        if svg:
+            return web.Response(body=svg, content_type="image/svg+xml", headers=headers)
+    return miss
 
 
 async def api_snapshot(request):
@@ -1187,6 +1676,10 @@ async def ws_video(request):
         return web.Response(status=400, text="This TV has no video")
     ws = web.WebSocketResponse(heartbeat=20, max_msg_size=0)
     await ws.prepare(request)
+    pr = request["pr"]
+    track = (ws, pr.get("sid"))
+    if pr.get("uid"):
+        _WS.setdefault(pr["uid"], set()).add(track)
     q, st = request.query, tv.streamer
     try:
         if q.get("size") and re.match(r"^\d{3,4}x\d{3,4}$", q["size"]):
@@ -1200,6 +1693,7 @@ async def ws_video(request):
         async for _ in ws:
             pass
     finally:
+        _WS.get(pr.get("uid"), set()).discard(track)
         await st.remove(ws)
     return ws
 
@@ -1207,6 +1701,10 @@ async def ws_video(request):
 async def ws_control(request):
     ws = web.WebSocketResponse(heartbeat=20)
     await ws.prepare(request)
+    pr = request["pr"]
+    track = (ws, pr.get("sid"))
+    if pr.get("uid"):
+        _WS.setdefault(pr["uid"], set()).add(track)
     hub.clients.add(ws)
     await ws.send_json({"t": "list", "tvs": [d.status() for d in hub.tvs.values()]})
     try:
@@ -1231,12 +1729,20 @@ async def ws_control(request):
             except Exception as e:
                 log("control:", e)
     finally:
+        _WS.get(pr.get("uid"), set()).discard(track)
         hub.clients.discard(ws)
     return ws
 
 
 async def on_start(app):
-    global ha
+    global ha, SEC
+    SEC = sec.Security(DATA)
+    app["flusher"] = asyncio.ensure_future(SEC.flusher())
+    if not SEC.has_users():
+        log("=" * 64)
+        log("FIRST RUN: no user exists yet. Open TVHub in your browser and create the administrator.")
+        log(f"Setup code (needed once): {SEC.setup_code}")
+        log("=" * 64)
     await load_registry()
     from ha import HABridge
     ha = HABridge(hub, log, DATA, route, KEY_RE)
@@ -1244,6 +1750,7 @@ async def on_start(app):
 
 
 async def on_stop(app):
+    app["flusher"].cancel()
     if ha:
         ha.stop()
     for d in list(hub.tvs.values()):
@@ -1251,9 +1758,20 @@ async def on_stop(app):
 
 
 def make_app():
-    app = web.Application(middlewares=[auth_mw])
+    app = web.Application(middlewares=[headers_mw, auth_mw], client_max_size=256 * 1024)
     app.add_routes([
         web.get("/", index),
+        web.get("/api/auth/status", api_auth_status),
+        web.post("/api/auth/setup", api_setup),
+        web.post("/api/auth/login", api_login),
+        web.post("/api/auth/logout", api_logout),
+        web.post("/api/auth/password", api_password),
+        web.get("/api/users", api_users),
+        web.post("/api/users", api_user_add),
+        web.patch("/api/users/{id}", api_user_edit),
+        web.delete("/api/users/{id}", api_user_delete),
+        web.post("/api/tokens", api_token_add),
+        web.delete("/api/tokens/{id}", api_token_delete),
         web.get("/api/tvs", api_list),
         web.get("/api/discover", api_discover_suggest),
         web.post("/api/discover", api_discover),
@@ -1270,6 +1788,11 @@ def make_app():
         web.post("/api/tvs/{id}/text", api_text),
         web.post("/api/tvs/{id}/volume", api_volume),
         web.post("/api/tvs/{id}/power", api_power),
+        web.post("/api/power-all", api_power_all),
+        web.get("/api/tvs/{id}/inputs", api_inputs),
+        web.post("/api/tvs/{id}/input", api_set_input),
+        web.post("/api/tvs/{id}/show", api_show),
+        web.get("/api/tvs/{id}/appicon/{pkg}", api_appicon),
         web.get("/ws/video", ws_video),
         web.get("/ws/control", ws_control),
     ])
@@ -1280,5 +1803,5 @@ def make_app():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8080"))
-    log(f"TVHub on :{port}  vidaa={'yes' if _vidaa else 'no'}  token={'on' if TOKEN else 'off'}")
+    log(f"TVHub on :{port}  vidaa={'yes' if _vidaa else 'no'}  legacy-token={'on' if TOKEN else 'off'}")
     web.run_app(make_app(), host="0.0.0.0", port=port, print=None)

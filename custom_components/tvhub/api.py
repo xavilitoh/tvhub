@@ -12,20 +12,20 @@ class TVHubError(Exception):
 
 
 class TVHubAuthError(TVHubError):
-    """TVHub needs a token (or the token is wrong)."""
+    """TVHub needs an API token (or the token is wrong)."""
 
 
 class TVHubClient:
     def __init__(self, session: aiohttp.ClientSession, host: str, port: int, token: str = "", ssl: bool = False) -> None:
         self._s = session
         self._base = f"{'https' if ssl else 'http'}://{host}:{port}"
-        self._params = {"token": token} if token else {}
+        self._headers = {"Authorization": f"Bearer {token}"} if token else {}
 
     async def _req(self, method: str, path: str, body: dict[str, Any] | None = None) -> Any:
         try:
             async with asyncio.timeout(15):
-                async with self._s.request(method, self._base + path, params=self._params, json=body) as r:
-                    if r.status == 401:
+                async with self._s.request(method, self._base + path, headers=self._headers, json=body) as r:
+                    if r.status in (401, 403):
                         raise TVHubAuthError("token required")
                     if r.status >= 400:
                         raise TVHubError(f"{method} {path}: HTTP {r.status}")
