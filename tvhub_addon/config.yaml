@@ -1,0 +1,19 @@
+name: TVHub
+version: "0.7.0"
+slug: tvhub
+description: One web remote for all your TVs (Android TV / Fire TV, LG, Samsung, Sony, Roku, Hisense)
+url: https://github.com/xavilitoh/tvhub
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: auto
+# Ingress: TVHub opens inside Home Assistant, which does the sign-in. Needs no published port.
+ingress: true
+ingress_port: 8080
+panel_icon: mdi:television-classic
+panel_title: TVHub
+# Same network as the host: Wake-on-LAN broadcasts and SSDP discovery reach your TVs.
+host_network: true
+# Persistent /data (TV list, keys, ADB key) is automatic for every add-on.
+init: false

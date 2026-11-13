@@ -25,6 +25,7 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from aiohttp import web, WSMsgType
 
@@ -36,6 +37,10 @@ ADB = os.environ.get("ADB_BIN", "adb")
 STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 TVS_PATH = os.path.join(DATA, "tvs.json")
 OLD_CFG_PATH = os.path.join(DATA, "config.json")      # v0.1 single-TV config, migrated on first start
+# Home Assistant add-on: the add-on image sets TVHUB_AUTH=ingress. It only takes effect when the Supervisor also injected
+# SUPERVISOR_TOKEN, so a stray variable on a standalone Docker never switches the login off.
+INGRESS = os.environ.get("TVHUB_AUTH") == "ingress" and bool(os.environ.get("SUPERVISOR_TOKEN"))
+SUPERVISOR_IP = "172.30.32.2"            # the only address Home Assistant's Ingress proxy connects from
 TOKEN = os.environ.get("TVHUB_TOKEN") or os.environ.get("TVDECK_TOKEN", "")      # TVDECK_TOKEN: name used before the rename
 
 KEY_RE = re.compile(r"^[A-Z0-9_]{2,40}$")
@@ -1768,8 +1773,22 @@ def kick(uid=None, sid=None, keep=None):
                 asyncio.ensure_future(item[0].close(code=4401, message=b"session ended"))
 
 
+def via_ingress(request):
+    """True only for requests that really come through Home Assistant's Ingress (checked on the TCP peer, not on headers)."""
+    return INGRESS and request.remote == SUPERVISOR_IP and bool(request.headers.get("X-Ingress-Path"))
+
+
+def ingress_path(request):
+    p = request.headers.get("X-Ingress-Path", "")
+    return p.rstrip("/") if re.fullmatch(r"/api/hassio_ingress/[A-Za-z0-9_\-]+", p.rstrip("/")) else ""
+
+
 def authenticate(request):
     """-> principal dict or None. Sessions (browser) or API tokens (integrations, `Authorization: Bearer ...`)."""
+    if via_ingress(request):
+        # Home Assistant already authenticated the person; every HA user who can open the panel is a TVHub admin.
+        name = (request.headers.get("X-Remote-User-Display-Name") or request.headers.get("X-Remote-User-Name") or "home-assistant")[:64]
+        return {"kind": "ingress", "name": name, "role": "admin", "uid": "", "csrf": ""}
     auth = request.headers.get("Authorization", "")
     if auth.startswith("Bearer "):
         raw = auth[7:].strip()
@@ -1812,13 +1831,21 @@ async def auth_mw(request, handler):
     if key in PUBLIC:
         request["pr"] = None
         return await handler(request)
-    if not SEC.has_users():
+    ing = via_ingress(request)
+    if not ing and not SEC.has_users():
         return jerr("setup_required", 403)
     pr = authenticate(request)
     if pr is None:
         return jerr("auth_required", 401)
     if request.path.startswith("/ws/") or request.method not in SAFE:
-        if not SEC.origin_ok(request):
+        if ing:
+            # No cookies of ours here, but HA's own ingress cookie rides along on cross-site requests: same Origin rule,
+            # against the host the browser used to reach Home Assistant.
+            o = request.headers.get("Origin")
+            if o is not None and urlsplit(o).netloc.lower() != request.headers.get("X-Forwarded-Host", "").lower():
+                SEC.audit("origin_rejected", request, user=pr["name"], origin=o)
+                return jerr("Origen no permitido", 403)
+        elif not SEC.origin_ok(request):
             SEC.audit("origin_rejected", request, user=pr["name"], origin=request.headers.get("Origin"))
             return jerr("Origen no permitido", 403)
         if pr["kind"] == "session" and request.method not in SAFE and \
@@ -1841,9 +1868,13 @@ async def index(request):
         with open(os.path.join(STATIC, "index.html"), encoding="utf-8") as f:
             INDEX_HTML = f.read()
     nonce = secrets.token_urlsafe(16)
-    html = INDEX_HTML.replace("<script>", f'<script nonce="{nonce}">')
+    ing = via_ingress(request)
+    base = ingress_path(request) if ing else ""
+    html = INDEX_HTML.replace("<script>", f'<script nonce="{nonce}">window.__BASE__={json.dumps(base)};', 1).replace("<script>", f'<script nonce="{nonce}">')
     resp = web.Response(text=html, content_type="text/html", charset="utf-8")
-    for k, v in sec.security_headers(SEC.is_secure(request), request.host, nonce).items():
+    host = request.headers.get("X-Forwarded-Host", request.host) if ing else request.host
+    for k, v in sec.security_headers(SEC.is_secure(request) or (ing and request.headers.get("X-Forwarded-Proto") == "https"),
+                                     host, nonce, framed=ing).items():
         resp.headers[k] = v
     resp.headers["Cache-Control"] = "no-store"
     return resp
@@ -1873,6 +1904,8 @@ def me_payload(pr, extra=None):
 
 
 async def api_auth_status(request):
+    if via_ingress(request):
+        return web.json_response(me_payload(authenticate(request), {"setup_required": False, "ingress": True}), headers=JSON_NOSTORE)
     if not SEC.has_users():
         return web.json_response({"setup_required": True, "authenticated": False}, headers=JSON_NOSTORE)
     pr = authenticate(request)

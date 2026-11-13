@@ -1,0 +1,23 @@
+# TVHub add-on
+
+Opens TVHub from the Home Assistant sidebar. Home Assistant signs you in, so TVHub shows no login page there and
+every Home Assistant user who can open the panel is an administrator in TVHub.
+
+## Install
+
+1. *Settings → Add-ons → Add-on store → ⋮ → Repositories* and add `https://github.com/xavilitoh/tvhub`.
+2. Install **TVHub**, start it and enable *Show in sidebar*.
+3. Add your TVs (see the main README for each brand).
+
+## Direct access (outside Home Assistant)
+
+The add-on uses the host network, so TVHub also answers on `http://<home-assistant-ip>:8080`. That door is **not**
+covered by Home Assistant: it asks for TVHub's own login, exactly like the standalone Docker image. The first time you
+open it, create the administrator with the setup code printed in the add-on log. Use that address (or an API token)
+for the TVHub integration in Home Assistant and for other devices.
+
+## Security
+
+- The login is skipped only for connections coming from the Home Assistant Supervisor (`172.30.32.2`) through Ingress.
+  Everything else needs a TVHub account or API token.
+- Mutating requests from a browser must come from the same origin as Home Assistant.

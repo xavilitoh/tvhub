@@ -1162,13 +1162,16 @@ function setLang(c) {
 applyStatic();
 
 // ------------------------------------------------------------------ session (sign-in / first-run setup)
-let me = null, csrf = "", _reloading = false;
+let me = null, csrf = "", _reloading = false, inIngress = false;
 const _fetch = window.fetch.bind(window);
+const BASE = window.__BASE__ || "";                   // "" normally; /api/hassio_ingress/<token> inside Home Assistant
+const U = (u) => (BASE && typeof u === "string" && u.startsWith("/") ? BASE + u : u);
 window.fetch = (u, o = {}) => {                       // every state-changing request carries the session's CSRF token
+  const raw = u; u = U(u);
   const m = (o.method || "GET").toUpperCase();
   if (m !== "GET" && m !== "HEAD" && csrf) o = { ...o, headers: { ...(o.headers || {}), "X-CSRF-Token": csrf } };
   return _fetch(u, { credentials: "same-origin", ...o }).then((r) => {
-    if (r.status === 401 && !String(u).startsWith("/api/auth/") && !_reloading) { _reloading = true; location.reload(); }
+    if (r.status === 401 && !String(raw).startsWith("/api/auth/") && !_reloading) { _reloading = true; location.reload(); }
     return r;
   });
 };
@@ -1178,7 +1181,7 @@ function showAuth(mode) {
   (mode === "setup" ? $("suCode") : $("liUser")).focus();
 }
 function startApp(st) {
-  me = st.user; csrf = st.csrf || "";
+  me = st.user; csrf = st.csrf || ""; inIngress = !!st.ingress;
   $("auth").hidden = true; document.querySelector(".wrap").hidden = false;
   bootApp();
 }
@@ -1393,7 +1396,7 @@ function renderAll() { syncHeader(); renderTabs(); renderPill(); renderStage(); 
 // ------------------------------------------------------------------ control socket
 let ctl, ctlBackoff = 500;
 function connectControl() {
-  ctl = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws/control");
+  ctl = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + U("/ws/control"));
   ctl.onopen = () => { ctlBackoff = 500; };
   ctl.onmessage = (e) => {
     const m = JSON.parse(e.data);
@@ -1470,8 +1473,8 @@ function startVideo() {
       "WebCodecs solo funciona en localhost o HTTPS. Abre http://localhost:8080 para el video fluido.");
   }
   const gen = ++vgen, [size, bitrate] = $("quality").value.split("|");
-  const ws = vws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host +
-    `/ws/video?tv=${t.id}&size=${size}&bitrate=${bitrate}`);
+  const ws = vws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + U(
+    `/ws/video?tv=${t.id}&size=${size}&bitrate=${bitrate}`));
   ws.binaryType = "arraybuffer"; needKey = true; curCodec = ""; newDecoder(gen);
   ws.onopen = () => { videoBackoff = 500; $("hudMode").textContent = "H.264 en vivo"; };
   ws.onmessage = async (e) => {
@@ -1553,7 +1556,7 @@ setInterval(() => {
 }, 500);
 
 // ------------------------------------------------------------------ apps
-const appIcon = (tvId, pkg) => withQ(`/api/tvs/${encodeURIComponent(tvId)}/appicon/${encodeURIComponent(pkg)}`);
+const appIcon = (tvId, pkg) => U(`/api/tvs/${encodeURIComponent(tvId)}/appicon/${encodeURIComponent(pkg)}`);
 let appsLoaded = false, apps = [];
 async function loadApps() {
   const id = cur; appsLoaded = true;
@@ -1630,7 +1633,7 @@ function liveChanged() {
 $("liveTyping").addEventListener("change", liveChanged);
 function toggleFull() { document.fullscreenElement ? document.exitFullscreen() : $("stage").requestFullscreen().catch(() => {}); }
 $("btnFull").onclick = toggleFull;
-function saveShot() { const a = document.createElement("a"); a.href = withQ(`/api/tvs/${cur}/snapshot?download=1`); a.click(); toast(T("Guardando captura…")); }
+function saveShot() { const a = document.createElement("a"); a.href = U(`/api/tvs/${cur}/snapshot?download=1`); a.click(); toast(T("Guardando captura…")); }
 $("btnShot").onclick = saveShot;
 $("quality").addEventListener("change", () => { gotFrame = false; stopVideo(); setTimeout(startVideo, 100); });
 
@@ -2002,6 +2005,7 @@ $("scanClose").onclick = () => scanDlg.close();
 function applyRole() {
   const admin = me.role === "admin";
   ["btnHA", "btnUsers"].forEach((id) => { $(id).hidden = !admin; });
+  ["btnLogout", "btnPw"].forEach((id) => { $(id).hidden = inIngress; });   // inside Home Assistant the session is Home Assistant's
   syncHeader();
   $("whoName").textContent = me.username; $("whoAv").textContent = me.username.slice(0, 1);
   $("whoRole").textContent = T(admin ? "Administrador" : "Usuario");
