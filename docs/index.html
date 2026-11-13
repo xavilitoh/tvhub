@@ -14,14 +14,14 @@
 <style>
 :root{
   --bg:#08080a; --bg2:#0e0e12; --card:#121217; --line:#23232b; --text:#f4f4f6; --mute:#9a9aa6; --dim:#6d6d78;
-  --accent:#0a84ff; --accent2:#5ac8fa; --ok:#30d158; --warn:#ff9f0a; --glow:rgba(10,132,255,.22);
+  --accent:#f5654a; --accent2:#ff9f7a; --ok:#30d158; --warn:#ff9f0a; --glow:rgba(245,101,74,.22);
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
 @media (prefers-color-scheme:light){
-  :root:not([data-theme="dark"]){--bg:#fbfbfd;--bg2:#f2f2f6;--card:#fff;--line:#e3e3ea;--text:#16161a;--mute:#5d5d69;--dim:#8a8a96;--glow:rgba(10,132,255,.14)}
+  :root:not([data-theme="dark"]){--bg:#fbfbfd;--bg2:#f2f2f6;--card:#fff;--line:#e3e3ea;--text:#16161a;--mute:#5d5d69;--dim:#8a8a96;--glow:rgba(245,101,74,.14)}
 }
-:root[data-theme="light"]{--bg:#fbfbfd;--bg2:#f2f2f6;--card:#fff;--line:#e3e3ea;--text:#16161a;--mute:#5d5d69;--dim:#8a8a96;--glow:rgba(10,132,255,.14)}
+:root[data-theme="light"]{--bg:#fbfbfd;--bg2:#f2f2f6;--card:#fff;--line:#e3e3ea;--text:#16161a;--mute:#5d5d69;--dim:#8a8a96;--glow:rgba(245,101,74,.14)}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
@@ -48,7 +48,7 @@ nav .wrap{display:flex;align-items:center;gap:22px;height:60px}
 .eyebrow{display:inline-flex;gap:10px;align-items:center;font-size:13px;color:var(--mute);border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px}
 .eyebrow b{color:var(--ok);font-weight:600}
 h1{font-size:clamp(40px,7vw,76px);line-height:1.04;letter-spacing:-.035em;margin:22px 0 18px;font-weight:800}
-h1 em{font-style:normal;background:linear-gradient(120deg,var(--accent2),var(--accent) 55%,#bf5af2);-webkit-background-clip:text;background-clip:text;color:transparent}
+h1 em{font-style:normal;background:linear-gradient(120deg,var(--accent2),var(--accent) 55%,#ff5c8a);-webkit-background-clip:text;background-clip:text;color:transparent}
 .lead{max-width:680px;margin:0 auto;color:var(--mute);font-size:clamp(17px,2.2vw,20px)}
 .cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:32px 0 10px}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:12px;font-weight:600;border:1px solid var(--line);background:var(--card)}

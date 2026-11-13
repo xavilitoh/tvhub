@@ -8,6 +8,9 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+### Changed
+- Accent colour is now coral `#f5654a` (was blue) in the web app and the landing page; new demo GIF.
+
 ### Added
 - Landing page (`docs/index.html`, English / Español) for GitHub Pages.
 
