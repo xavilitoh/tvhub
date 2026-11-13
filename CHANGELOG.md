@@ -8,6 +8,9 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+### Added
+- Landing page (`docs/index.html`, English / Español) for GitHub Pages.
+
 ## [0.8.2] - 2026-11-13
 
 ### Fixed
