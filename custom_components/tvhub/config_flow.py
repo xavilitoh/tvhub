@@ -19,8 +19,6 @@ class TVHubConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_hassio(self, discovery_info: HassioServiceInfo) -> ConfigFlowResult:
         """The TVHub add-on announced itself through the Supervisor (host, port and an API token)."""
-        if self._async_current_entries():
-            return self.async_abort(reason="already_configured")
         cfg = discovery_info.config
         self._hassio = {CONF_HOST: str(cfg[CONF_HOST]), CONF_PORT: int(cfg.get(CONF_PORT, DEFAULT_PORT)),
                         CONF_TOKEN: str(cfg.get(CONF_TOKEN, "")), CONF_SSL: False}

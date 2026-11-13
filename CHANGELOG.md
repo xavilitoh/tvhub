@@ -8,6 +8,9 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+### Fixed
+- The integration now offers **TVHub discovered** even when another TVHub server is already configured (e.g. one in a separate Docker); it is only skipped when that same server is already set up.
+
 ## [0.8.0] - 2026-11-13
 
 ### Added
