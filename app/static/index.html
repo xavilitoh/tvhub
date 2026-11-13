@@ -1163,11 +1163,12 @@ applyStatic();
 
 // ------------------------------------------------------------------ session (sign-in / first-run setup)
 let me = null, csrf = "", _reloading = false, inIngress = false;
-const _fetch = window.fetch.bind(window);
+const _rawFetch = window.fetch.bind(window);
+const _fetch = (u, o) => _rawFetch(U(u), o);          // U() adds the Ingress prefix; also used by the login / status calls
 const BASE = window.__BASE__ || "";                   // "" normally; /api/hassio_ingress/<token> inside Home Assistant
 const U = (u) => (BASE && typeof u === "string" && u.startsWith("/") ? BASE + u : u);
 window.fetch = (u, o = {}) => {                       // every state-changing request carries the session's CSRF token
-  const raw = u; u = U(u);
+  const raw = u;
   const m = (o.method || "GET").toUpperCase();
   if (m !== "GET" && m !== "HEAD" && csrf) o = { ...o, headers: { ...(o.headers || {}), "X-CSRF-Token": csrf } };
   return _fetch(u, { credentials: "same-origin", ...o }).then((r) => {
