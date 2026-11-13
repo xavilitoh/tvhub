@@ -8,6 +8,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-11-13
+
 ### Fixed
 - The integration now offers **TVHub discovered** even when another TVHub server is already configured (e.g. one in a separate Docker); it is only skipped when that same server is already set up.
 
@@ -101,7 +103,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ### Added
 - First release: control Android TV / Fire TV (live screen over ADB), LG webOS and Hisense VIDAA from the browser, with a Home Assistant bridge over MQTT.
 
-[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/xavilitoh/tvhub/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/xavilitoh/tvhub/compare/v0.7.3...v0.8.0
 [0.7.3]: https://github.com/xavilitoh/tvhub/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/xavilitoh/tvhub/compare/v0.7.1...v0.7.2
