@@ -31,6 +31,8 @@ from urllib.parse import urlsplit
 import aiohttp
 from aiohttp import web, WSMsgType
 
+import addon
+
 import icons
 import security as sec
 
@@ -2495,10 +2497,20 @@ async def on_start(app):
             ha.configure(ha.clean(cfg))
             log(f"MQTT: configured from Home Assistant's broker ({cfg['host']}:{cfg['port']})")
     ha.start(asyncio.get_running_loop())
+    if INGRESS and os.environ.get("TVHUB_CHANNEL") != "dev":
+        if addon.options(DATA).get("install_integration"):
+            res = addon.install_integration(log)
+            if res in ("installed", "updated"):
+                log(f"TVHub integration {res} in /config/custom_components/tvhub: RESTART Home Assistant to load it")
+            elif res == "unavailable":
+                log("install_integration is on but the integration or Home Assistant's config folder is not available")
+        app["announce"] = asyncio.ensure_future(addon.announce(SEC, DATA, addon_port(8080), log))
 
 
 async def on_stop(app):
     app["flusher"].cancel()
+    if app.get("announce"):
+        app["announce"].cancel()
     if ha:
         ha.stop()
     for d in list(hub.tvs.values()):

@@ -11,7 +11,7 @@ on:
   push:
     tags: ["v*"]
     branches: [dev]
-    paths: ["app/**", "Dockerfile", "requirements.txt", ".github/workflows/docker.yml"]
+    paths: ["app/**", "custom_components/**", "Dockerfile", "requirements.txt", ".github/workflows/docker.yml"]
   workflow_dispatch:
 
 permissions:

@@ -8,6 +8,10 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+### Added
+- Add-on: announces itself to Home Assistant (Supervisor discovery) with an API token, so the TVHub integration shows **TVHub discovered** and needs no IP or token typed by hand. The integration accepts that discovery (`async_step_hassio`).
+- Add-on option **install_integration** (off by default): copies the integration, bundled in the image, to `/config/custom_components/tvhub`; never overwrites a HACS or manual install.
+
 ## [0.7.3] - 2026-11-12
 
 ### Added
