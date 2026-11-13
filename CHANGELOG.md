@@ -8,6 +8,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-12
+
 ### Fixed
 - Inside Home Assistant (Ingress) the sign-in and status calls ignored the Ingress path prefix, so the page showed the login form with "No se pudo contactar con el servidor" instead of opening. They now use the prefix like every other request.
 
@@ -85,7 +87,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ### Added
 - First release: control Android TV / Fire TV (live screen over ADB), LG webOS and Hisense VIDAA from the browser, with a Home Assistant bridge over MQTT.
 
-[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/xavilitoh/tvhub/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/xavilitoh/tvhub/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/xavilitoh/tvhub/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/xavilitoh/tvhub/compare/v0.6.0...v0.6.1
