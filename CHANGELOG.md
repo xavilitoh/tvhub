@@ -8,6 +8,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-11-13
+
 ### Fixed
 - Add-on: the integration could not connect through the direct port ("requires a valid API token") while no TVHub administrator existed, which is always the case when you only use Ingress. A valid API token now works even before the first administrator is created; everything else still waits for it.
 
@@ -106,7 +108,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ### Added
 - First release: control Android TV / Fire TV (live screen over ADB), LG webOS and Hisense VIDAA from the browser, with a Home Assistant bridge over MQTT.
 
-[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.8.2...HEAD
+[0.8.2]: https://github.com/xavilitoh/tvhub/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/xavilitoh/tvhub/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/xavilitoh/tvhub/compare/v0.7.3...v0.8.0
 [0.7.3]: https://github.com/xavilitoh/tvhub/compare/v0.7.2...v0.7.3
