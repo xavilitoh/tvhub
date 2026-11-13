@@ -4,10 +4,14 @@ name: Docker image
 #   1. publishes ghcr.io/<owner>/tvhub (linux/amd64 + linux/arm64), and
 #   2. creates the GitHub Release for that tag. HACS only offers Releases, not bare tags,
 #      so without this step Home Assistant never sees the new integration version.
+# Every push to the dev branch (when the app changes) publishes ghcr.io/<owner>/tvhub:dev to test it, e.g. with the
+# "TVHub (dev)" add-on. It never touches :latest or a version tag.
 # You can also run the image build by hand from the Actions tab.
 on:
   push:
     tags: ["v*"]
+    branches: [dev]
+    paths: ["app/**", "Dockerfile", "requirements.txt", ".github/workflows/docker.yml"]
   workflow_dispatch:
 
 permissions:
@@ -33,7 +37,8 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
       - uses: docker/build-push-action@v6
         with:
           context: .

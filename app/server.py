@@ -20,6 +20,7 @@ import json
 import os
 import re
 import secrets
+import signal
 import sys
 import time
 import uuid
@@ -1773,9 +1774,18 @@ def kick(uid=None, sid=None, keep=None):
                 asyncio.ensure_future(item[0].close(code=4401, message=b"session ended"))
 
 
+_warned_ingress = False
+
+
 def via_ingress(request):
     """True only for requests that really come through Home Assistant's Ingress (checked on the TCP peer, not on headers)."""
-    return INGRESS and request.remote == SUPERVISOR_IP and bool(request.headers.get("X-Ingress-Path"))
+    global _warned_ingress
+    has_hdr = bool(request.headers.get("X-Ingress-Path"))
+    ok = INGRESS and request.remote == SUPERVISOR_IP and has_hdr
+    if has_hdr and not ok and not _warned_ingress:
+        _warned_ingress = True              # one line, so a misconfigured add-on can be diagnosed from its log
+        log(f"Ingress request NOT trusted: ingress-mode={'on' if INGRESS else 'off'} peer={request.remote} (expected {SUPERVISOR_IP})")
+    return ok
 
 
 def ingress_path(request):
@@ -2501,7 +2511,40 @@ def make_app():
     return app
 
 
+INGRESS_PORT = int(os.environ.get("TVHUB_INGRESS_PORT", "8099"))   # port Home Assistant's Ingress talks to (ingress_port in config.yaml)
+
+
+def addon_port(default):
+    """Add-on only: the *port* option the user sets in Home Assistant (written by the Supervisor to /data/options.json)."""
+    try:
+        with open(os.path.join(DATA, "options.json")) as f:
+            p = int(json.load(f).get("port") or default)
+        return p if 1 <= p <= 65535 else default
+    except (OSError, ValueError, TypeError, AttributeError):
+        return default
+
+
+async def serve(app, ports):
+    runner = web.AppRunner(app)
+    await runner.setup()
+    for p in ports:
+        await web.TCPSite(runner, "0.0.0.0", p).start()
+    stop = asyncio.Event()
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        asyncio.get_running_loop().add_signal_handler(sig, stop.set)
+    await stop.wait()
+    await runner.cleanup()
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8080"))
-    log(f"TVHub on :{port}  vidaa={'yes' if _vidaa else 'no'}  legacy-token={'on' if TOKEN else 'off'}")
-    web.run_app(make_app(), host="0.0.0.0", port=port, print=None)
+    log(f"Ingress mode: {'ON' if INGRESS else 'off'} (TVHUB_AUTH={os.environ.get('TVHUB_AUTH', '')!r}, "
+        f"SUPERVISOR_TOKEN={'yes' if os.environ.get('SUPERVISOR_TOKEN') else 'no'})")
+    if INGRESS:
+        port = addon_port(port)
+        ports = list(dict.fromkeys([port, INGRESS_PORT]))        # direct access (configurable) + Ingress
+        log(f"TVHub on :{port} (direct, own login) and :{INGRESS_PORT} (Home Assistant Ingress)  vidaa={'yes' if _vidaa else 'no'}")
+        asyncio.run(serve(make_app(), ports))
+    else:
+        log(f"TVHub on :{port}  vidaa={'yes' if _vidaa else 'no'}  legacy-token={'on' if TOKEN else 'off'}")
+        web.run_app(make_app(), host="0.0.0.0", port=port, print=None)

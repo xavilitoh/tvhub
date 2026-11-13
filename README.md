@@ -100,9 +100,10 @@ If you run **Home Assistant OS** or **Supervised**, install TVHub as an add-on i
 
 Details:
 - Every Home Assistant user who can open the panel is an **administrator** in TVHub.
-- The add-on uses the **host network**, so Wake-on-LAN and network search work (they don't from Docker Desktop). That also means TVHub answers on `http://<home-assistant-ip>:8080`: that door is **not** covered by Home Assistant and still asks for TVHub's own login (create the admin with the setup code in the add-on log). Use it, plus an API token, for the integration below.
+- The add-on uses the **host network**, so Wake-on-LAN and network search work (they don't from Docker Desktop). That also means TVHub answers on `http://<home-assistant-ip>:8080` (set another port in the add-on's *Configuration* tab, option **port**, if 8080 is busy; Ingress itself uses 8099): that door is **not** covered by Home Assistant and still asks for TVHub's own login (create the admin with the setup code in the add-on log). Use it, plus an API token, for the integration below.
 - Data (`/data`: TV list, keys, ADB key) persists across updates.
 - Home Assistant *Container* / *Core* installs have no add-ons: use the Docker image from [Quick start](#quick-start) next to it.
+- **Try the dev build:** every push to the `dev` branch publishes `ghcr.io/xavilitoh/tvhub:dev`. To test it in Home Assistant, turn on *Advanced mode* (your profile) and install **TVHub (dev)** from the same repository; it has its own data and ports (8081 direct, 8098 Ingress), so it runs next to the stable add-on. With plain Docker use `ghcr.io/xavilitoh/tvhub:dev`.
 - The add-on is the same image plus `TVHUB_AUTH=ingress`; see [Security](#security) for how the login is skipped safely.
 
 Parts 1–3 below work the same with the add-on or with the standalone image. Both land on the **same device** in Home Assistant.
