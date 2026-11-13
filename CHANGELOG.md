@@ -8,6 +8,11 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-11-12
+
+### Added
+- Add-on: when the Mosquitto broker add-on is installed, TVHub reads its login from the Supervisor on the first start and connects to MQTT by itself. A new **Usar el broker de Home Assistant** button in the Home Assistant dialog does the same later. An external broker is still filled in by hand; settings you saved always win.
+
 ## [0.7.2] - 2026-11-12
 
 ### Fixed
@@ -87,7 +92,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ### Added
 - First release: control Android TV / Fire TV (live screen over ADB), LG webOS and Hisense VIDAA from the browser, with a Home Assistant bridge over MQTT.
 
-[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.7.3...HEAD
+[0.7.3]: https://github.com/xavilitoh/tvhub/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/xavilitoh/tvhub/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/xavilitoh/tvhub/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/xavilitoh/tvhub/compare/v0.6.1...v0.7.0

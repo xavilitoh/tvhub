@@ -1,5 +1,5 @@
 name: TVHub
-version: "0.7.2"
+version: "0.7.3"
 slug: tvhub
 description: One web remote for all your TVs (Android TV / Fire TV, LG, Samsung, Sony, Roku, Hisense)
 url: https://github.com/xavilitoh/tvhub
@@ -17,6 +17,9 @@ panel_title: TVHub
 host_network: true
 # Persistent /data (TV list, keys, ADB key) is automatic for every add-on.
 init: false
+# Lets TVHub ask the Supervisor for the Mosquitto add-on's login (optional: it works without Mosquitto too).
+services:
+  - mqtt:want
 # Port for direct access (outside Home Assistant). The add-on uses the host network, so change it here if 8080 is taken.
 # Ingress always uses 8099 and does not depend on this option.
 options:

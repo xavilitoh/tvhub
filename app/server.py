@@ -28,6 +28,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import urlsplit
 
+import aiohttp
 from aiohttp import web, WSMsgType
 
 import icons
@@ -1757,7 +1758,7 @@ _WS = {}                        # user id -> {(websocket, session hash)}: closed
 SAFE = ("GET", "HEAD", "OPTIONS")
 PUBLIC = {("GET", "/"), ("GET", "/api/auth/status"), ("POST", "/api/auth/login"), ("POST", "/api/auth/setup")}
 ADMIN_ONLY = {("POST", "/api/tvs"), ("PATCH", "/api/tvs/{id}"), ("DELETE", "/api/tvs/{id}"), ("POST", "/api/tvs/{id}/pair"),
-              ("GET", "/api/discover"), ("POST", "/api/discover"), ("GET", "/api/ha"), ("PUT", "/api/ha")}
+              ("GET", "/api/discover"), ("POST", "/api/discover"), ("GET", "/api/ha"), ("PUT", "/api/ha"), ("POST", "/api/ha/supervisor")}
 JSON_NOSTORE = {"Cache-Control": "no-store"}
 
 
@@ -2133,8 +2134,40 @@ async def api_discover(request):
     return web.json_response(res)
 
 
+async def supervisor_mqtt():
+    """Add-on only: the MQTT broker Home Assistant's Supervisor knows about (the Mosquitto add-on), or None."""
+    if not INGRESS:
+        return None
+    url = os.environ.get("SUPERVISOR_URL", "http://supervisor").rstrip("/") + "/services/mqtt"
+    try:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as cs:
+            async with cs.get(url, headers={"Authorization": "Bearer " + os.environ["SUPERVISOR_TOKEN"]}) as r:
+                if r.status != 200:
+                    return None
+                d = (await r.json()).get("data") or {}
+    except Exception as e:                                # noqa: BLE001 - no Supervisor / no broker: just not available
+        log("Supervisor MQTT service:", e)
+        return None
+    if not d.get("host"):
+        return None
+    return {"host": d["host"], "port": d.get("port") or 1883, "user": d.get("username") or "",
+            "password": d.get("password") or "", "tls": bool(d.get("ssl"))}
+
+
 async def api_ha(request):
-    return web.json_response(ha.status())
+    return web.json_response({**ha.status(), "supervisor": INGRESS})
+
+
+async def api_ha_supervisor(request):
+    cfg = await supervisor_mqtt()
+    if not cfg:
+        return web.json_response({"error": "Home Assistant no tiene un broker MQTT (instala el add-on Mosquitto)"}, status=404)
+    try:
+        ha.configure(ha.clean(cfg))
+    except ValueError as e:
+        return web.json_response({"error": str(e)}, status=400)
+    SEC.audit("ha_configured", request, user=request["pr"]["name"], source="supervisor")
+    return web.json_response({**ha.status(), "supervisor": INGRESS})
 
 
 async def api_ha_put(request):
@@ -2456,6 +2489,11 @@ async def on_start(app):
     await load_registry()
     from ha import HABridge
     ha = HABridge(hub, log, DATA, route, KEY_RE)
+    if INGRESS and not ha.host and not ha.cfg_path.exists():       # first start inside Home Assistant: use its broker
+        cfg = await supervisor_mqtt()
+        if cfg:
+            ha.configure(ha.clean(cfg))
+            log(f"MQTT: configured from Home Assistant's broker ({cfg['host']}:{cfg['port']})")
     ha.start(asyncio.get_running_loop())
 
 
@@ -2487,6 +2525,7 @@ def make_app():
         web.post("/api/discover", api_discover),
         web.get("/api/ha", api_ha),
         web.put("/api/ha", api_ha_put),
+        web.post("/api/ha/supervisor", api_ha_supervisor),
         web.post("/api/tvs", api_add),
         web.patch("/api/tvs/{id}", api_edit),
         web.delete("/api/tvs/{id}", api_delete),

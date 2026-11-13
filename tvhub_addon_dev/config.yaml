@@ -17,6 +17,9 @@ panel_icon: mdi:television-classic
 panel_title: TVHub dev
 host_network: true
 init: false
+# Lets TVHub ask the Supervisor for the Mosquitto add-on's login (optional: it works without Mosquitto too).
+services:
+  - mqtt:want
 # Different default from the stable add-on so both can run at once.
 options:
   port: 8081

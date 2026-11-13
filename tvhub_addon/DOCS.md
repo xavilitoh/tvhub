@@ -10,6 +10,10 @@ every Home Assistant user who can open the panel is an administrator in TVHub.
 2. Install **TVHub**, start it and enable *Show in sidebar*.
 3. Add your TVs (see the main README for each brand).
 
+## MQTT
+
+With the **Mosquitto broker** add-on installed, TVHub connects to it by itself on its first start. If you install Mosquitto afterwards, open *Home Assistant* in TVHub's menu and press **Usar el broker de Home Assistant**. An external broker has to be filled in by hand.
+
 ## Direct access (outside Home Assistant)
 
 The add-on uses the host network, so TVHub also answers on `http://<home-assistant-ip>:8080` (change the port in the add-on's *Configuration* tab, option **port**, if 8080 is taken; restart the add-on afterwards). Ingress itself always uses port 8099, which is also reachable on the network but only trusts Home Assistant, so it asks for a login too. That door is **not**
