@@ -67,6 +67,9 @@ async def announce(sec, data_dir, port, log, attempts=5):
                         if r.status == 200:
                             log(f"Home Assistant: announced TVHub at {host}:{port} (the integration offers to set itself up)")
                             return True
+                        if r.status in (401, 403):             # not declared in config.yaml (discovery: [tvhub]): retrying won't help
+                            log(f"Home Assistant discovery refused (HTTP {r.status}): this add-on does not declare discovery")
+                            return False
                         log(f"Home Assistant discovery: HTTP {r.status}")
         except Exception as e:                          # noqa: BLE001 - Supervisor still starting, etc.
             log("Home Assistant discovery:", e)
