@@ -1,5 +1,5 @@
 name: TVHub
-version: "0.7.3"
+version: "0.8.0"
 slug: tvhub
 description: One web remote for all your TVs (Android TV / Fire TV, LG, Samsung, Sony, Roku, Hisense)
 url: https://github.com/xavilitoh/tvhub
@@ -20,9 +20,19 @@ init: false
 # Lets TVHub ask the Supervisor for the Mosquitto add-on's login (optional: it works without Mosquitto too).
 services:
   - mqtt:want
+# Tells Home Assistant where TVHub is so the integration can set itself up (see app/addon.py).
+discovery:
+  - tvhub
+# Home Assistant's config folder, only written when the option install_integration is on.
+map:
+  - type: homeassistant_config
+    read_only: false
+    path: /config
 # Port for direct access (outside Home Assistant). The add-on uses the host network, so change it here if 8080 is taken.
 # Ingress always uses 8099 and does not depend on this option.
 options:
   port: 8080
+  install_integration: false
 schema:
   port: port
+  install_integration: bool

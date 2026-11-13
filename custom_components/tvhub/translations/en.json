@@ -10,6 +10,10 @@
           "token": "API token",
           "ssl": "Use HTTPS"
         }
+      },
+      "hassio_confirm": {
+        "title": "TVHub discovered",
+        "description": "The TVHub add-on ({addon}) is running. Connect it to Home Assistant? No IP or token to type."
       }
     },
     "error": {

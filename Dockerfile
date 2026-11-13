@@ -15,6 +15,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
+# Bundled for the Home Assistant add-on's optional "install the integration" (see app/addon.py)
+COPY custom_components/tvhub /opt/tvhub-integration
 
 EXPOSE 8080
 CMD ["python", "app/server.py"]

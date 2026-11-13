@@ -8,6 +8,12 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-13
+
+### Added
+- Add-on: announces itself to Home Assistant (Supervisor discovery) with an API token, so the TVHub integration shows **TVHub discovered** and needs no IP or token typed by hand. The integration accepts that discovery (`async_step_hassio`).
+- Add-on option **install_integration** (off by default): copies the integration, bundled in the image, to `/config/custom_components/tvhub`; never overwrites a HACS or manual install.
+
 ## [0.7.3] - 2026-11-12
 
 ### Added
@@ -92,7 +98,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ### Added
 - First release: control Android TV / Fire TV (live screen over ADB), LG webOS and Hisense VIDAA from the browser, with a Home Assistant bridge over MQTT.
 
-[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.7.3...HEAD
+[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/xavilitoh/tvhub/compare/v0.7.3...v0.8.0
 [0.7.3]: https://github.com/xavilitoh/tvhub/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/xavilitoh/tvhub/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/xavilitoh/tvhub/compare/v0.7.0...v0.7.1
