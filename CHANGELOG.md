@@ -8,6 +8,9 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+### Fixed
+- Inside Home Assistant (Ingress) the sign-in and status calls ignored the Ingress path prefix, so the page showed the login form with "No se pudo contactar con el servidor" instead of opening. They now use the prefix like every other request.
+
 ## [0.7.1] - 2026-11-12
 
 ### Added
