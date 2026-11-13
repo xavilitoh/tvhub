@@ -100,7 +100,7 @@ If you run **Home Assistant OS** or **Supervised**, install TVHub as an add-on i
 
 Details:
 - Every Home Assistant user who can open the panel is an **administrator** in TVHub.
-- The add-on uses the **host network**, so Wake-on-LAN and network search work (they don't from Docker Desktop). That also means TVHub answers on `http://<home-assistant-ip>:8080`: that door is **not** covered by Home Assistant and still asks for TVHub's own login (create the admin with the setup code in the add-on log). Use it, plus an API token, for the integration below.
+- The add-on uses the **host network**, so Wake-on-LAN and network search work (they don't from Docker Desktop). That also means TVHub answers on `http://<home-assistant-ip>:8080` (set another port in the add-on's *Configuration* tab, option **port**, if 8080 is busy; Ingress itself uses 8099): that door is **not** covered by Home Assistant and still asks for TVHub's own login (create the admin with the setup code in the add-on log). Use it, plus an API token, for the integration below.
 - Data (`/data`: TV list, keys, ADB key) persists across updates.
 - Home Assistant *Container* / *Core* installs have no add-ons: use the Docker image from [Quick start](#quick-start) next to it.
 - The add-on is the same image plus `TVHUB_AUTH=ingress`; see [Security](#security) for how the login is skipped safely.

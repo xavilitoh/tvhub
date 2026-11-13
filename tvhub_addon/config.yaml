@@ -10,10 +10,16 @@ startup: application
 boot: auto
 # Ingress: TVHub opens inside Home Assistant, which does the sign-in. Needs no published port.
 ingress: true
-ingress_port: 8080
+ingress_port: 8099
 panel_icon: mdi:television-classic
 panel_title: TVHub
 # Same network as the host: Wake-on-LAN broadcasts and SSDP discovery reach your TVs.
 host_network: true
 # Persistent /data (TV list, keys, ADB key) is automatic for every add-on.
 init: false
+# Port for direct access (outside Home Assistant). The add-on uses the host network, so change it here if 8080 is taken.
+# Ingress always uses 8099 and does not depend on this option.
+options:
+  port: 8080
+schema:
+  port: port

@@ -8,6 +8,9 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+### Added
+- Add-on option **port** (Configuration tab) to choose the port for direct access instead of the fixed 8080. Ingress now uses its own fixed port (8099), so it keeps working whatever you choose.
+
 ### Changed
 - The log now states whether Ingress mode is on at startup and, once, why an Ingress request was not trusted (peer address).
 - README and add-on docs: one-click button to add the add-on repository to Home Assistant.

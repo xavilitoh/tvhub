@@ -12,7 +12,7 @@ every Home Assistant user who can open the panel is an administrator in TVHub.
 
 ## Direct access (outside Home Assistant)
 
-The add-on uses the host network, so TVHub also answers on `http://<home-assistant-ip>:8080`. That door is **not**
+The add-on uses the host network, so TVHub also answers on `http://<home-assistant-ip>:8080` (change the port in the add-on's *Configuration* tab, option **port**, if 8080 is taken; restart the add-on afterwards). Ingress itself always uses port 8099, which is also reachable on the network but only trusts Home Assistant, so it asks for a login too. That door is **not**
 covered by Home Assistant: it asks for TVHub's own login, exactly like the standalone Docker image. The first time you
 open it, create the administrator with the setup code printed in the add-on log. Use that address (or an API token)
 for the TVHub integration in Home Assistant and for other devices.

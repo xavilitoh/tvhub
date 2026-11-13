@@ -20,6 +20,7 @@ import json
 import os
 import re
 import secrets
+import signal
 import sys
 import time
 import uuid
@@ -2510,9 +2511,40 @@ def make_app():
     return app
 
 
+INGRESS_PORT = 8099             # fixed port Home Assistant's Ingress talks to (see tvhub_addon/config.yaml)
+
+
+def addon_port(default):
+    """Add-on only: the *port* option the user sets in Home Assistant (written by the Supervisor to /data/options.json)."""
+    try:
+        with open(os.path.join(DATA, "options.json")) as f:
+            p = int(json.load(f).get("port") or default)
+        return p if 1 <= p <= 65535 else default
+    except (OSError, ValueError, TypeError, AttributeError):
+        return default
+
+
+async def serve(app, ports):
+    runner = web.AppRunner(app)
+    await runner.setup()
+    for p in ports:
+        await web.TCPSite(runner, "0.0.0.0", p).start()
+    stop = asyncio.Event()
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        asyncio.get_running_loop().add_signal_handler(sig, stop.set)
+    await stop.wait()
+    await runner.cleanup()
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8080"))
     log(f"Ingress mode: {'ON' if INGRESS else 'off'} (TVHUB_AUTH={os.environ.get('TVHUB_AUTH', '')!r}, "
         f"SUPERVISOR_TOKEN={'yes' if os.environ.get('SUPERVISOR_TOKEN') else 'no'})")
-    log(f"TVHub on :{port}  vidaa={'yes' if _vidaa else 'no'}  legacy-token={'on' if TOKEN else 'off'}")
-    web.run_app(make_app(), host="0.0.0.0", port=port, print=None)
+    if INGRESS:
+        port = addon_port(port)
+        ports = list(dict.fromkeys([port, INGRESS_PORT]))        # direct access (configurable) + Ingress
+        log(f"TVHub on :{port} (direct, own login) and :{INGRESS_PORT} (Home Assistant Ingress)  vidaa={'yes' if _vidaa else 'no'}")
+        asyncio.run(serve(make_app(), ports))
+    else:
+        log(f"TVHub on :{port}  vidaa={'yes' if _vidaa else 'no'}  legacy-token={'on' if TOKEN else 'off'}")
+        web.run_app(make_app(), host="0.0.0.0", port=port, print=None)
