@@ -8,6 +8,9 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+### Changed
+- README and add-on docs: one-click button to add the add-on repository to Home Assistant.
+
 ## [0.7.0] - 2026-11-12
 
 ### Added

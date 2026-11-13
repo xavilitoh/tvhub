@@ -94,7 +94,8 @@ No pairing. Add a TV of type **Roku** with its IP (port 8060). If it doesn't ans
 
 If you run **Home Assistant OS** or **Supervised**, install TVHub as an add-on instead of a separate Docker container. It opens from the HA sidebar and **Home Assistant signs you in, so there is no TVHub login page** there.
 
-1. *Settings → Add-ons → Add-on store → ⋮ → Repositories* → add `https://github.com/xavilitoh/tvhub`.
+1. [![Open your Home Assistant instance and show the add add-on repository dialog with this repository pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fxavilitoh%2Ftvhub)
+   or by hand: *Settings → Add-ons → Add-on store → ⋮ → Repositories* → add `https://github.com/xavilitoh/tvhub`.
 2. Install **TVHub**, start it and turn on *Show in sidebar*.
 
 Details:
