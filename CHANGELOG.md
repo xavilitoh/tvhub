@@ -8,6 +8,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-12
+
 ### Added
 - **Home Assistant add-on** (HA OS / Supervised): add `https://github.com/xavilitoh/tvhub` as a repository and TVHub opens from the sidebar through Ingress. Home Assistant signs you in, so there is no TVHub login there; direct access on port 8080 keeps the normal login.
 - `TVHUB_AUTH=ingress` mode: the login is skipped only for connections from the Supervisor (`172.30.32.2`) carrying `X-Ingress-Path`, and only when the Supervisor also provided `SUPERVISOR_TOKEN`. Browser writes are checked against the Home Assistant origin.
@@ -70,7 +72,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ### Added
 - First release: control Android TV / Fire TV (live screen over ADB), LG webOS and Hisense VIDAA from the browser, with a Home Assistant bridge over MQTT.
 
-[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/xavilitoh/tvhub/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/xavilitoh/tvhub/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/xavilitoh/tvhub/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/xavilitoh/tvhub/compare/v0.4.0...v0.5.0
