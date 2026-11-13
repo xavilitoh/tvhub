@@ -8,6 +8,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-12
+
 ### Added
 - CI publishes `ghcr.io/xavilitoh/tvhub:dev` on every push to `dev` (never `latest`), and a hidden **TVHub (dev)** add-on (Advanced mode) runs it next to the stable one.
 - Add-on option **port** (Configuration tab) to choose the port for direct access instead of the fixed 8080. Ingress now uses its own fixed port (8099), so it keeps working whatever you choose.
@@ -80,7 +82,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ### Added
 - First release: control Android TV / Fire TV (live screen over ADB), LG webOS and Hisense VIDAA from the browser, with a Home Assistant bridge over MQTT.
 
-[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/xavilitoh/tvhub/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/xavilitoh/tvhub/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/xavilitoh/tvhub/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/xavilitoh/tvhub/compare/v0.5.0...v0.6.0
