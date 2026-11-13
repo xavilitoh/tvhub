@@ -8,6 +8,9 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+### Fixed
+- Add-on: the integration could not connect through the direct port ("requires a valid API token") while no TVHub administrator existed, which is always the case when you only use Ingress. A valid API token now works even before the first administrator is created; everything else still waits for it.
+
 ## [0.8.1] - 2026-11-13
 
 ### Fixed
