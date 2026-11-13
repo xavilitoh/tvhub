@@ -1845,8 +1845,8 @@ async def auth_mw(request, handler):
         request["pr"] = None
         return await handler(request)
     ing = via_ingress(request)
-    if not ing and not SEC.has_users():
-        return jerr("setup_required", 403)
+    if not ing and not SEC.has_users() and not request.headers.get("Authorization", "").startswith("Bearer "):
+        return jerr("setup_required", 403)          # no admin yet; an API token still works (the add-on's integration uses one)
     pr = authenticate(request)
     if pr is None:
         return jerr("auth_required", 401)
