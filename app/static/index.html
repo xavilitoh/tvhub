@@ -697,6 +697,7 @@
         <label>Discovery<input type="text" id="haDisc" placeholder="homeassistant" spellcheck="false" style="width:100%"></label>
       </div>
     </details>
+    <button type="button" class="btn" id="haSup" hidden>Usar el broker de Home Assistant</button>
     <div class="hastatus"><span class="dot" id="haSDot"></span><span id="haStatus">Sin configurar</span></div>
     <p id="haErr" class="err" role="alert"></p>
     <div class="actions">
@@ -803,6 +804,8 @@ const store = {
 const LANGS = [["es", "Español"], ["en", "English"], ["pt", "Português"], ["fr", "Français"], ["de", "Deutsch"]];
 const LIDX = { en: 0, pt: 1, fr: 2, de: 3 };
 const I18N = {
+"Usar el broker de Home Assistant": ["Use Home Assistant's broker", "Usar o broker do Home Assistant", "Utiliser le broker de Home Assistant", "Broker von Home Assistant verwenden"],
+"Home Assistant no tiene un broker MQTT (instala el add-on Mosquitto)": ["Home Assistant has no MQTT broker (install the Mosquitto add-on)", "O Home Assistant não tem um broker MQTT (instale o add-on Mosquitto)", "Home Assistant n'a pas de broker MQTT (installez le module Mosquitto)", "Home Assistant hat keinen MQTT-Broker (Mosquitto-Add-on installieren)"],
 "TVHub en GitHub": ["TVHub on GitHub", "TVHub no GitHub", "TVHub sur GitHub", "TVHub auf GitHub"],
 "Añadir otra TV": ["Add another TV", "Adicionar outra TV", "Ajouter une autre TV", "Weiteren TV hinzufügen"],
 "Buscar en la red": ["Search the network", "Buscar na rede", "Rechercher sur le réseau", "Im Netzwerk suchen"],
@@ -1789,12 +1792,13 @@ function openHA() {
   $("haUser").value = h.user || ""; $("haPass").value = ""; $("haPass").placeholder = h.has_password ? T("•••••••• (sin cambios)") : "";
   $("haTls").checked = !!h.tls; $("haIns").checked = !!h.insecure;
   $("haPrefix").value = h.prefix && h.prefix !== "tvhub" ? h.prefix : ""; $("haDisc").value = h.discovery && h.discovery !== "homeassistant" ? h.discovery : "";
+  $("haSup").hidden = !h.supervisor;
   haTls(); $("haOff").hidden = !(h.enabled); renderHA(); haDlg.showModal(); $("haHost").focus();
 }
-async function haPut(body, waitConnect) {
+async function haPut(body, waitConnect, url = "/api/ha", method = "PUT") {
   $("haErr").textContent = "";
   try {
-    const r = await fetch(withQ("/api/ha"), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const r = await fetch(withQ(url), { method, headers: { "Content-Type": "application/json" }, body: method === "PUT" ? JSON.stringify(body) : undefined });
     const j = await r.json();
     if (!r.ok) { $("haErr").textContent = Tm(j.error || "No se pudo guardar"); return; }
     ha = j; renderHA();
@@ -1815,6 +1819,7 @@ $("haForm").addEventListener("submit", (e) => {
 $("haOff").onclick = () => haPut({ host: "", port: ha && ha.port, user: ha && ha.user, password: "", keep_password: true,
   tls: ha && ha.tls, insecure: ha && ha.insecure, prefix: ha && ha.prefix, discovery: ha && ha.discovery }, false);
 $("haCancel").onclick = () => haDlg.close();
+$("haSup").onclick = () => haPut(null, true, "/api/ha/supervisor", "POST");     // the add-on's own broker (Mosquitto)
 $("btnHA").onclick = () => { setDrawer(false); openHA(); };
 
 // ------------------------------------------------------------------ wall (all TVs at once)
