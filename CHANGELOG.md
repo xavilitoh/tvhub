@@ -9,6 +9,7 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ## [Unreleased]
 
 ### Changed
+- The log now states whether Ingress mode is on at startup and, once, why an Ingress request was not trusted (peer address).
 - README and add-on docs: one-click button to add the add-on repository to Home Assistant.
 
 ## [0.7.0] - 2026-11-12

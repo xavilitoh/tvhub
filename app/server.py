@@ -1773,9 +1773,18 @@ def kick(uid=None, sid=None, keep=None):
                 asyncio.ensure_future(item[0].close(code=4401, message=b"session ended"))
 
 
+_warned_ingress = False
+
+
 def via_ingress(request):
     """True only for requests that really come through Home Assistant's Ingress (checked on the TCP peer, not on headers)."""
-    return INGRESS and request.remote == SUPERVISOR_IP and bool(request.headers.get("X-Ingress-Path"))
+    global _warned_ingress
+    has_hdr = bool(request.headers.get("X-Ingress-Path"))
+    ok = INGRESS and request.remote == SUPERVISOR_IP and has_hdr
+    if has_hdr and not ok and not _warned_ingress:
+        _warned_ingress = True              # one line, so a misconfigured add-on can be diagnosed from its log
+        log(f"Ingress request NOT trusted: ingress-mode={'on' if INGRESS else 'off'} peer={request.remote} (expected {SUPERVISOR_IP})")
+    return ok
 
 
 def ingress_path(request):
@@ -2503,5 +2512,7 @@ def make_app():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8080"))
+    log(f"Ingress mode: {'ON' if INGRESS else 'off'} (TVHUB_AUTH={os.environ.get('TVHUB_AUTH', '')!r}, "
+        f"SUPERVISOR_TOKEN={'yes' if os.environ.get('SUPERVISOR_TOKEN') else 'no'})")
     log(f"TVHub on :{port}  vidaa={'yes' if _vidaa else 'no'}  legacy-token={'on' if TOKEN else 'off'}")
     web.run_app(make_app(), host="0.0.0.0", port=port, print=None)
