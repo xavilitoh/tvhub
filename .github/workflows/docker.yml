@@ -58,6 +58,16 @@ jobs:
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists"
-          else
-            gh release create "$TAG" --title "TVHub ${TAG#v}" --generate-notes --verify-tag --latest
+            exit 0
           fi
+          # Notes = the section of CHANGELOG.md for this version (fails the release if it is missing or empty).
+          VER="${TAG#v}"
+          awk -v v="$VER" '
+            /^## \[/ { if (on) exit; on = index($0, "[" v "]") > 0; next }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ] || ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::CHANGELOG.md has no section for $VER. Add '## [$VER] - date' and re-run."
+            exit 1
+          fi
+          gh release create "$TAG" --title "TVHub $VER" --notes-file notes.md --verify-tag --latest

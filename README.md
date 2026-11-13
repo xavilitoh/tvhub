@@ -4,7 +4,7 @@
 Keep a list of TVs, switch between them with one click (or keys <kbd>1</kbd>–<kbd>9</kbd>). Runs in Docker, opens in your browser.
 
 ![TVHub: live screen, network search, wall view (simulated TVs)](docs/demo.gif)
-<sub>Recorded against simulated TVs: a test pattern stands in for the screen, and the network search results are mocked.</sub>
+<sub>Recorded against simulated TVs: a test pattern stands in for the screen, and the network search results are mocked. Regenerate it with [docs/demo-src](docs/demo-src).</sub>
 
 ## Supported TVs
 
@@ -90,7 +90,21 @@ No pairing. Add a TV of type **Roku** with its IP (port 8060). If it doesn't ans
 
 ## Home Assistant
 
-Two parts, use either or both. Both land on the **same device** in Home Assistant.
+### 0. Run TVHub as a Home Assistant add-on (HA OS / Supervised)
+
+If you run **Home Assistant OS** or **Supervised**, install TVHub as an add-on instead of a separate Docker container. It opens from the HA sidebar and **Home Assistant signs you in, so there is no TVHub login page** there.
+
+1. *Settings → Add-ons → Add-on store → ⋮ → Repositories* → add `https://github.com/xavilitoh/tvhub`.
+2. Install **TVHub**, start it and turn on *Show in sidebar*.
+
+Details:
+- Every Home Assistant user who can open the panel is an **administrator** in TVHub.
+- The add-on uses the **host network**, so Wake-on-LAN and network search work (they don't from Docker Desktop). That also means TVHub answers on `http://<home-assistant-ip>:8080`: that door is **not** covered by Home Assistant and still asks for TVHub's own login (create the admin with the setup code in the add-on log). Use it, plus an API token, for the integration below.
+- Data (`/data`: TV list, keys, ADB key) persists across updates.
+- Home Assistant *Container* / *Core* installs have no add-ons: use the Docker image from [Quick start](#quick-start) next to it.
+- The add-on is the same image plus `TVHUB_AUTH=ingress`; see [Security](#security) for how the login is skipped safely.
+
+Parts 1–3 below work the same with the add-on or with the standalone image. Both land on the **same device** in Home Assistant.
 
 ### 1. MQTT: buttons, app picker, text, sensors
 
@@ -193,6 +207,8 @@ TVHub has no open access: every API call and WebSocket needs a signed-in user or
 - **Audit log** at `/data/audit.log` (JSON lines, 0600, rotated) with logins, failures, lockouts, user/token/TV changes — never passwords or tokens. Data files (`users.json`, `sessions.json`) are 0600 and written atomically.
 - **Recovery** if you lose the admin password: `docker compose exec tvhub python app/security.py reset-password <user>`.
 
+**Inside Home Assistant (add-on).** With the add-on, TVHub skips its own login only for requests that come through Home Assistant's Ingress: the TCP peer must be the Supervisor (`172.30.32.2`) and carry `X-Ingress-Path`. The switch (`TVHUB_AUTH=ingress`) is set by the add-on image and is ignored unless the Supervisor also provided `SUPERVISOR_TOKEN`, so setting it on a standalone Docker does nothing. Anyone else — including LAN access to port 8080 — still needs a TVHub account or API token. Browser writes through Ingress are checked against the Home Assistant origin (`X-Forwarded-Host`), and the page may be framed only by its own origin. The standalone image keeps `X-Frame-Options: DENY`.
+
 **Behind a reverse proxy / HTTPS** (strongly recommended for anything beyond localhost): terminate TLS in Caddy/nginx/Traefik, forward `X-Forwarded-For` and `X-Forwarded-Proto`, and set `TVHUB_TRUST_PROXY=1` — only when the proxy is the sole way in, otherwise clients could spoof their IP.
 
 **Upgrading from a version without users.** On first start you'll be asked to create the admin. The old `TVHUB_TOKEN` still works as a *legacy* Bearer token with the `user` role (deprecated; use API tokens instead).
@@ -227,6 +243,7 @@ v0.4.
 
 - **Tested:** server, framing, multi-TV registry and persistence, volume routing and the whole browser UI, end to end against a simulated ADB (ffmpeg H.264 at ~30 fps in Chromium) a simulated MQTT broker (keys arrive as `KEY_UP`, `KEY_RETURNS`, `KEY_VOLUMEUP`…) a real MQTT broker for the Home Assistant bridge (discovery of 21 entities, button/app/text commands reaching the TV, removal when a TV is deleted, reconnect after a broker restart), and a simulated LG webOS TV (pairing prompt, buttons, volume/mute, app list and launch, text input, key persisted across restarts).
 - **Checked on a real Fire TV Stick 4K Max (Fire OS 7):** ADB, key events, `screenrecord`, package list.
+- **Add-on / Ingress:** the login bypass, the Supervisor-IP check, the origin rule and the framing headers are tested against a simulated Supervisor request; it has not been run in a real Home Assistant OS yet.
 - **Not verified against a real Home Assistant:** discovery payloads follow the documented MQTT discovery schema and work against a plain broker, but I could not run Home Assistant itself.
 - **Roku, Samsung and Sony drivers: tested only against simulators I wrote from the public protocol descriptions** (pairing/PSK, keys, apps, inputs, volume, power, standby detection, reconnection after the TV drops, token/PSK handling). I have not had these TVs in hand, so model-specific differences (especially Samsung apps/launch and Sony app and input URIs) are likely to need fixes. Reports with model and firmware are very welcome.
 - **Not verified on real hardware:** the LG webOS driver (uses the maintained `aiowebostv` library, but it has only run against a simulator here) and the Hisense/VIDAA driver (pairing, state detection, which keys each firmware accepts — newer firmware may reject or ignore commands), app launching and text input, and the Docker image itself. Reports with your TV model and firmware are very welcome.
@@ -241,6 +258,7 @@ v0.4.
 | `TVHUB_TRUST_PROXY` | – | `1` to trust `X-Forwarded-For/Proto` from a reverse proxy |
 | `TVHUB_SESSION_IDLE` / `TVHUB_SESSION_MAX` | `7200` / `43200` | Session idle / absolute lifetime (seconds) |
 | `TVHUB_TOKEN` | – | Deprecated legacy Bearer token (role `user`); prefer API tokens |
+| `TVHUB_AUTH` | – | `ingress` = delegate sign-in to Home Assistant Ingress. Set by the add-on image; only works with `SUPERVISOR_TOKEN` |
 | `PORT` | `8080` | HTTP port inside the container |
 | `MQTT_HOST` | – | Enables the Home Assistant bridge (see above) |
 | `MQTT_PORT` / `MQTT_USER` / `MQTT_PASSWORD` | `1883` / – / – | Broker connection |

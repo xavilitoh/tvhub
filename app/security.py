@@ -422,10 +422,10 @@ class Security:
 
 # --------------------------------------------------------------------------- headers
 
-def security_headers(secure, ws_host="", nonce=""):
+def security_headers(secure, ws_host="", nonce="", framed=False):
     h = {
         "X-Content-Type-Options": "nosniff",
-        "X-Frame-Options": "DENY",
+        "X-Frame-Options": "SAMEORIGIN" if framed else "DENY",
         "Referrer-Policy": "no-referrer",
         "Cross-Origin-Opener-Policy": "same-origin",
         "Cross-Origin-Resource-Policy": "same-origin",
@@ -434,11 +434,12 @@ def security_headers(secure, ws_host="", nonce=""):
     if secure:
         h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     if nonce:
+        fa = "'self'" if framed else "'none'"                       # framed: shown inside Home Assistant's Ingress panel
         h["Content-Security-Policy"] = (
             f"default-src 'none'; script-src 'nonce-{nonce}'; style-src 'self' 'unsafe-inline'; "
             f"img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; "
             f"connect-src 'self' ws://{ws_host} wss://{ws_host}; base-uri 'none'; form-action 'self'; "
-            "frame-ancestors 'none'; object-src 'none'")
+            f"frame-ancestors {fa}; object-src 'none'")
     return h
 
 
