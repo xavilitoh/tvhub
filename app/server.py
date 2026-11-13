@@ -2511,7 +2511,7 @@ def make_app():
     return app
 
 
-INGRESS_PORT = 8099             # fixed port Home Assistant's Ingress talks to (see tvhub_addon/config.yaml)
+INGRESS_PORT = int(os.environ.get("TVHUB_INGRESS_PORT", "8099"))   # port Home Assistant's Ingress talks to (ingress_port in config.yaml)
 
 
 def addon_port(default):

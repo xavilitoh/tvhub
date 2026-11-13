@@ -1,0 +1,24 @@
+name: TVHub (dev)
+# "dev" is also the image tag: ghcr.io/xavilitoh/tvhub:dev, rebuilt by CI on every push to the dev branch.
+version: "dev"
+slug: tvhub_dev
+description: Test build of TVHub from the dev branch. Unstable; use the TVHub add-on for daily use.
+url: https://github.com/xavilitoh/tvhub
+# Hidden in the store unless "Advanced mode" is on in your Home Assistant profile.
+stage: experimental
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: manual
+ingress: true
+ingress_port: 8098
+panel_icon: mdi:television-classic
+panel_title: TVHub dev
+host_network: true
+init: false
+# Different default from the stable add-on so both can run at once.
+options:
+  port: 8081
+schema:
+  port: port

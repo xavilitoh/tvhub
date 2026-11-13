@@ -9,6 +9,7 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ## [Unreleased]
 
 ### Added
+- CI publishes `ghcr.io/xavilitoh/tvhub:dev` on every push to `dev` (never `latest`), and a hidden **TVHub (dev)** add-on (Advanced mode) runs it next to the stable one.
 - Add-on option **port** (Configuration tab) to choose the port for direct access instead of the fixed 8080. Ingress now uses its own fixed port (8099), so it keeps working whatever you choose.
 
 ### Changed
