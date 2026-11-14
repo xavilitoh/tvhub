@@ -2,17 +2,17 @@
   "domain": "tvhub",
   "name": "TVHub",
   "codeowners": [
-    "@xavilitoh"
+    "@wxberroa"
   ],
   "config_flow": true,
   "dependencies": [
     "frontend",
     "http"
   ],
-  "documentation": "https://github.com/xavilitoh/tvhub",
+  "documentation": "https://github.com/wxberroa/tvhub",
   "integration_type": "hub",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/xavilitoh/tvhub/issues",
+  "issue_tracker": "https://github.com/wxberroa/tvhub/issues",
   "requirements": [],
   "version": "0.8.2"
 }
