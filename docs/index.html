@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVHub — one remote for all your TVs</title>
+<meta name="description" content="One web remote for all your TVs: Android TV / Fire TV with a live picture of the screen, LG webOS, Samsung, Sony, Roku and Hisense. Open source, runs on your network, works with Home Assistant.">
+<meta property="og:title" content="TVHub — one remote for all your TVs">
+<meta property="og:description" content="Android TV, Fire TV, LG, Samsung, Sony, Roku and Hisense in one web app. Open source. Home Assistant add-on included.">
+<meta property="og:image" content="https://xavilitoh.github.io/tvhub/icon-1024.png">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#08080a">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{
+  --bg:#08080a; --bg2:#0e0e12; --card:#121217; --line:#23232b; --text:#f4f4f6; --mute:#9a9aa6; --dim:#6d6d78;
+  --accent:#f5654a; --accent2:#ff9f7a; --ok:#30d158; --warn:#ff9f0a; --glow:rgba(245,101,74,.22);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){--bg:#fbfbfd;--bg2:#f2f2f6;--card:#fff;--line:#e3e3ea;--text:#16161a;--mute:#5d5d69;--dim:#8a8a96;--glow:rgba(245,101,74,.14)}
+}
+:root[data-theme="light"]{--bg:#fbfbfd;--bg2:#f2f2f6;--card:#fff;--line:#e3e3ea;--text:#16161a;--mute:#5d5d69;--dim:#8a8a96;--glow:rgba(245,101,74,.14)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+/* nav */
+nav{position:sticky;top:0;z-index:20;backdrop-filter:saturate(180%) blur(18px);background:color-mix(in srgb,var(--bg) 72%,transparent);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:22px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em}
+.brand img{width:28px;height:28px;border-radius:7px}
+.links{display:flex;gap:22px;margin-left:12px;color:var(--mute);font-size:14.5px}
+.links a:hover{color:var(--text)}
+.sp{flex:1}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;background:var(--accent);color:#fff;font-weight:600;font-size:14px}
+.pill:hover{filter:brightness(1.1)}
+.ghost{color:var(--mute);font-size:14px;border:1px solid var(--line);border-radius:999px;padding:7px 12px;background:transparent;cursor:pointer;font-family:inherit}
+.ghost:hover{color:var(--text)}
+/* hero */
+.hero{position:relative;text-align:center;padding:84px 0 40px;overflow:hidden}
+.hero:before{content:"";position:absolute;inset:-200px 0 auto 0;height:640px;background:radial-gradient(60% 60% at 50% 40%,var(--glow),transparent 70%);pointer-events:none}
+.hero:after{content:"";position:absolute;inset:0 0 auto 0;height:520px;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(60% 70% at 50% 0%,#000,transparent);opacity:.45;pointer-events:none}
+.hero .wrap{position:relative;z-index:1}
+.mascot{width:96px;height:96px;border-radius:24px;box-shadow:0 18px 60px var(--glow),0 0 0 1px var(--line);margin-bottom:26px}
+.eyebrow{display:inline-flex;gap:10px;align-items:center;font-size:13px;color:var(--mute);border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px}
+.eyebrow b{color:var(--ok);font-weight:600}
+h1{font-size:clamp(40px,7vw,76px);line-height:1.04;letter-spacing:-.035em;margin:22px 0 18px;font-weight:800}
+h1 em{font-style:normal;background:linear-gradient(120deg,var(--accent2),var(--accent) 55%,#ff5c8a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{max-width:680px;margin:0 auto;color:var(--mute);font-size:clamp(17px,2.2vw,20px)}
+.cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:32px 0 10px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:12px;font-weight:600;border:1px solid var(--line);background:var(--card)}
+.btn:hover{border-color:var(--dim)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.1)}
+.ver{color:var(--dim);font-size:13px;font-family:var(--mono)}
+.shot{margin:46px auto 0;max-width:960px;border-radius:18px;border:1px solid var(--line);background:var(--card);box-shadow:0 40px 120px -30px var(--glow),0 0 0 1px rgba(255,255,255,.02);overflow:hidden}
+.bar{display:flex;gap:7px;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
+.bar i{width:11px;height:11px;border-radius:50%;background:var(--line)}
+.shot img{display:block;width:100%;height:auto}
+.cap{color:var(--dim);font-size:13px;margin-top:12px}
+/* sections */
+section{padding:84px 0}
+.tag{color:var(--accent);font-family:var(--mono);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+h2{font-size:clamp(28px,4.4vw,44px);letter-spacing:-.03em;line-height:1.1;margin:10px 0 14px;font-weight:800}
+.sub{color:var(--mute);max-width:640px;margin:0 0 40px}
+.center{text-align:center}.center .sub{margin-left:auto;margin-right:auto}
+/* quick start */
+.qs{max-width:820px;margin:0 auto;border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
+.tabs{display:flex;gap:2px;padding:8px;border-bottom:1px solid var(--line);background:var(--bg2);overflow-x:auto}
+.tab{border:0;background:transparent;color:var(--mute);padding:9px 16px;border-radius:9px;font:600 14px var(--sans);cursor:pointer;white-space:nowrap}
+.tab[aria-selected=true]{background:var(--card);color:var(--text);box-shadow:0 0 0 1px var(--line)}
+.panel{padding:22px;display:none}.panel.on{display:block}
+.panel p{margin:0 0 14px;color:var(--mute);font-size:15px}
+pre{margin:0;position:relative;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px 56px 16px 16px;font:13.5px/1.7 var(--mono);overflow-x:auto;color:var(--text)}
+pre .c{color:var(--dim)}pre .p{color:var(--accent2);user-select:none}
+.copy{position:absolute;top:10px;right:10px;border:1px solid var(--line);background:var(--card);color:var(--mute);border-radius:8px;padding:4px 9px;font:12px var(--sans);cursor:pointer}
+.copy:hover{color:var(--text)}
+.steps{margin:0;padding-left:20px;color:var(--mute);font-size:15px}.steps li{margin:6px 0}.steps b{color:var(--text)}
+.hass{display:inline-block;margin-top:14px}.hass img{height:34px}
+/* grids */
+.grid{display:grid;gap:16px;grid-template-columns:repeat(3,1fr)}
+.card{border:1px solid var(--line);background:var(--card);border-radius:16px;padding:22px;transition:border-color .2s,transform .2s}
+.card:hover{border-color:var(--dim);transform:translateY(-2px)}
+.card h3{margin:0 0 6px;font-size:17px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.card p{margin:0;color:var(--mute);font-size:14.5px}
+.ico{width:38px;height:38px;border-radius:10px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);display:grid;place-items:center;margin-bottom:14px;font-size:19px}
+.badge{font:600 11px var(--mono);padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mute);text-transform:uppercase;letter-spacing:.04em}
+.badge.live{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+.badge.exp{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+.tv .meta{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}
+.alt{background:var(--bg2);border-block:1px solid var(--line)}
+.closing{text-align:center}
+.closing h2{font-size:clamp(32px,5vw,56px)}
+.points{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;color:var(--mute);margin:0 0 30px;font-size:15px}
+.points span:before{content:"✓ ";color:var(--ok)}
+footer{border-top:1px solid var(--line);padding:30px 0;color:var(--dim);font-size:14px}
+footer .wrap{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+footer a:hover{color:var(--text)}
+@media(max-width:860px){.grid{grid-template-columns:1fr 1fr}.links{display:none}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}.hero{padding-top:56px}section{padding:60px 0}.pill.nav-i{display:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a class="brand" href="#top"><img src="icon-1024.png" alt="">TVHub</a>
+  <div class="links">
+    <a href="#features" data-i="nav_features">Features</a>
+    <a href="#tvs" data-i="nav_tvs">Supported TVs</a>
+    <a href="#install" data-i="nav_install">Install</a>
+    <a href="#ha" data-i="nav_ha">Home Assistant</a>
+    <a href="https://github.com/xavilitoh/tvhub#readme" data-i="nav_docs">Docs</a>
+  </div>
+  <div class="sp"></div>
+  <button class="ghost" id="lang" aria-label="Language">ES</button>
+  <a class="pill nav-i" href="#install" data-i="nav_cta">Install</a>
+</div></nav>
+
+<header class="hero" id="top"><div class="wrap">
+  <img class="mascot" src="icon-1024.png" alt="TVHub logo">
+  <div><span class="eyebrow"><b>●</b> <span data-i="eyebrow">Open source · Runs on your network · No cloud account</span></span></div>
+  <h1><span data-i="h1a">One remote for</span> <em data-i="h1b">all your TVs.</em></h1>
+  <p class="lead" data-i="lead">Android TV, Fire TV, LG, Samsung, Sony, Roku and Hisense in a single web app — with a live picture of the screen, a wall of every TV at once, and Home Assistant built in.</p>
+  <div class="cta">
+    <a class="btn primary" href="#install" data-i="cta1">Get started</a>
+    <a class="btn" href="https://github.com/xavilitoh/tvhub" data-i="cta2">★ View on GitHub</a>
+    <a class="btn" href="#ha" data-i="cta3">Home Assistant add-on</a>
+  </div>
+  <div class="ver" id="ver">&nbsp;</div>
+  <div class="shot">
+    <div class="bar"><i></i><i></i><i></i></div>
+    <img src="demo.gif" alt="TVHub: the wall of TVs, the live screen and the network search" width="860" height="511">
+  </div>
+  <div class="cap" data-i="cap">Recorded against simulated TVs: a test pattern stands in for the screen.</div>
+</div></header>
+
+<section id="features"><div class="wrap">
+  <div class="center"><div class="tag" data-i="tg_f">Features</div><h2 data-i="f_h">Everything in your living room, in one tab.</h2>
+  <p class="sub" data-i="f_s">Add your TVs once. Switch between them with a click or the keys 1–9.</p></div>
+  <div class="grid">
+    <div class="card"><div class="ico">▶</div><h3 data-i="f1h">Live screen</h3><p data-i="f1p">Real H.264 video from Android TV and Fire TV, decoded in your browser. Not screenshots.</p></div>
+    <div class="card"><div class="ico">▦</div><h3 data-i="f2h">Wall of TVs</h3><p data-i="f2p">Every TV at once: a fresh screenshot, the app in front and the volume. Power each one from its tile.</p></div>
+    <div class="card"><div class="ico">⌘</div><h3 data-i="f3h">A proper remote</h3><p data-i="f3p">D-pad, transport, volume, live typing, app launcher and HDMI inputs. Keyboard shortcuts included.</p></div>
+    <div class="card"><div class="ico">⌂</div><h3 data-i="f4h">Home Assistant, natively</h3><p data-i="f4p">An add-on with no login screen, a real <code>media_player</code> per TV, MQTT discovery and a dashboard card.</p></div>
+    <div class="card"><div class="ico">⏻</div><h3 data-i="f5h">Power &amp; Wake-on-LAN</h3><p data-i="f5p">All TVs on or off in one click. Sleeping TVs are woken over the network and reconnect by themselves.</p></div>
+    <div class="card"><div class="ico">🔒</div><h3 data-i="f6h">Secure by default</h3><p data-i="f6p">Argon2id passwords, sessions, CSRF protection, brute-force lockouts, API tokens and an audit log.</p></div>
+  </div>
+</div></section>
+
+<section id="tvs" class="alt"><div class="wrap">
+  <div class="center"><div class="tag" data-i="tg_t">Supported TVs</div><h2 data-i="t_h">Six families, one interface.</h2>
+  <p class="sub" data-i="t_s">Each driver talks to the TV over your local network. No vendor cloud, no account.</p></div>
+  <div class="grid">
+    <div class="card tv"><h3>Android TV / Fire TV <span class="badge live" data-i="live">live screen</span></h3><p data-i="tv_an">ADB over TCP. Live H.264 picture, apps, text input.</p><div class="meta"><span class="badge">keys</span><span class="badge">apps</span><span class="badge">text</span><span class="badge">video</span></div></div>
+    <div class="card tv"><h3>LG webOS</h3><p data-i="tv_lg">Local network, no LG account. Real volume and mute, power off and apps.</p><div class="meta"><span class="badge">keys</span><span class="badge">apps</span><span class="badge">text</span><span class="badge">volume</span></div></div>
+    <div class="card tv"><h3>Hisense VIDAA</h3><p data-i="tv_hi">Over MQTT. Remote keys and volume, Wake-on-LAN.</p><div class="meta"><span class="badge">keys</span><span class="badge">volume</span></div></div>
+    <div class="card tv"><h3>Samsung Tizen <span class="badge exp" data-i="exp">experimental</span></h3><p data-i="tv_sa">2016 and newer over WebSocket. Keys, power and apps.</p><div class="meta"><span class="badge">keys</span><span class="badge">apps</span></div></div>
+    <div class="card tv"><h3>Sony Bravia <span class="badge exp" data-i="exp2">experimental</span></h3><p data-i="tv_so">REST and IR codes with a pre-shared key. Real volume and HDMI inputs.</p><div class="meta"><span class="badge">keys</span><span class="badge">apps</span><span class="badge">text</span><span class="badge">volume</span></div></div>
+    <div class="card tv"><h3>Roku <span class="badge exp" data-i="exp3">experimental</span></h3><p data-i="tv_ro">ECP on port 8060, no pairing. Players and Roku TV.</p><div class="meta"><span class="badge">keys</span><span class="badge">apps</span><span class="badge">text</span></div></div>
+  </div>
+</div></section>
+
+<section id="install"><div class="wrap">
+  <div class="center"><div class="tag" data-i="tg_q">Quick start</div><h2 data-i="i_h">Up and running in a minute.</h2>
+  <p class="sub" data-i="i_s">Pick how you run things at home.</p></div>
+  <div class="qs">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="docker">Docker</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="addon" data-i="tab_addon">HA add-on</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="hacs">HACS</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="src" data-i="tab_src">From source</button>
+    </div>
+    <div class="panel on" id="p-docker">
+      <p data-i="p_docker">Intel/AMD and Apple Silicon / Raspberry Pi, one line:</p>
+      <pre><button class="copy" data-i="copy">Copy</button><span class="p">$</span> docker run -d --name tvhub --restart unless-stopped \
+    -p 127.0.0.1:8080:8080 -v tvhub-data:/data \
+    ghcr.io/xavilitoh/tvhub:latest
+<span class="c"># then open</span>
+<span class="p">$</span> open http://localhost:8080</pre>
+    </div>
+    <div class="panel" id="p-addon">
+      <p data-i="p_addon">For Home Assistant OS / Supervised. Opens from the sidebar, and Home Assistant signs you in.</p>
+      <ol class="steps">
+        <li data-i="a1">Add the repository to Home Assistant (button below).</li>
+        <li data-i="a2">Install <b>TVHub</b>, start it and turn on <b>Show in sidebar</b>.</li>
+        <li data-i="a3">Optional: turn on <b>install_integration</b> and the integration sets itself up.</li>
+      </ol>
+      <a class="hass" href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fxavilitoh%2Ftvhub"><img alt="Add add-on repository to my Home Assistant" src="https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg"></a>
+    </div>
+    <div class="panel" id="p-hacs">
+      <p data-i="p_hacs">The integration gives every TV a <code>media_player</code> and the dashboard card.</p>
+      <ol class="steps">
+        <li data-i="h1">HACS → ⋮ → <b>Custom repositories</b> → <code>https://github.com/xavilitoh/tvhub</code>, category <b>Integration</b>.</li>
+        <li data-i="h2">Download <b>TVHub</b> and restart Home Assistant.</li>
+        <li data-i="h3"><b>Add integration → TVHub</b> (or accept <b>TVHub discovered</b> when you use the add-on).</li>
+      </ol>
+      <a class="hass" href="https://my.home-assistant.io/redirect/hacs_repository/?owner=xavilitoh&repository=tvhub&category=integration"><img alt="Open in HACS" src="https://my.home-assistant.io/badges/hacs_repository.svg"></a>
+    </div>
+    <div class="panel" id="p-src">
+      <p data-i="p_src">Build it yourself with Docker Compose:</p>
+      <pre><button class="copy" data-i="copy2">Copy</button><span class="p">$</span> git clone https://github.com/xavilitoh/tvhub &amp;&amp; cd tvhub
+<span class="p">$</span> docker compose up -d --build
+<span class="p">$</span> open http://localhost:8080</pre>
+    </div>
+  </div>
+</div></section>
+
+<section id="ha" class="alt"><div class="wrap">
+  <div class="center"><div class="tag" data-i="tg_h">Home Assistant</div><h2 data-i="ha_h">Made to live next to Home Assistant.</h2>
+  <p class="sub" data-i="ha_s">Use the parts you need. They all land on the same device.</p></div>
+  <div class="grid">
+    <div class="card"><div class="ico">◧</div><h3 data-i="ha1h">Add-on with Ingress</h3><p data-i="ha1p">One click in the sidebar, no extra login, data kept across updates and the Mosquitto broker picked up automatically.</p></div>
+    <div class="card"><div class="ico">⎔</div><h3 data-i="ha2h">media_player per TV</h3><p data-i="ha2p">On/off, volume, play/pause and the app list as sources. Works with voice assistants and automations.</p></div>
+    <div class="card"><div class="ico">⌗</div><h3 data-i="ha3h">MQTT &amp; remote card</h3><p data-i="ha3p">Buttons, app picker and sensors by MQTT discovery, plus a TVHub Remote card for your dashboard.</p></div>
+  </div>
+</div></section>
+
+<section class="closing"><div class="wrap">
+  <div class="tag" data-i="tg_o">Open source</div>
+  <h2 data-i="c_h">Your TVs. Your network. Your data.</h2>
+  <div class="points"><span data-i="c1">MIT licensed</span><span data-i="c2">No subscription</span><span data-i="c3">No hosted tier</span><span data-i="c4">Nothing leaves your home</span></div>
+  <div class="cta">
+    <a class="btn primary" href="#install" data-i="cta1b">Get started</a>
+    <a class="btn" href="https://github.com/xavilitoh/tvhub/releases" data-i="c_rel">Releases &amp; changelog</a>
+    <a class="btn" href="https://github.com/xavilitoh/tvhub/issues" data-i="c_iss">Report an issue</a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <span>© TVHub · MIT</span><div class="sp" style="flex:1"></div>
+  <a href="https://github.com/xavilitoh/tvhub">GitHub</a>
+  <a href="https://github.com/xavilitoh/tvhub/blob/main/CHANGELOG.md">Changelog</a>
+  <a href="https://github.com/xavilitoh/tvhub#readme">Docs</a>
+  <a href="https://github.com/xavilitoh/tvhub/pkgs/container/tvhub">Docker image</a>
+</div></footer>
+
+<script>
+const I = {
+  es: {
+    nav_features:"Funciones", nav_tvs:"TVs compatibles", nav_install:"Instalar", nav_ha:"Home Assistant", nav_docs:"Docs", nav_cta:"Instalar",
+    eyebrow:"Código abierto · Corre en tu red · Sin cuenta en la nube",
+    h1a:"Un mando para", h1b:"todas tus TVs.",
+    lead:"Android TV, Fire TV, LG, Samsung, Sony, Roku y Hisense en una sola web — con imagen en vivo de la pantalla, una pared con todas las TVs a la vez y Home Assistant integrado.",
+    cta1:"Empezar", cta1b:"Empezar", cta2:"★ Ver en GitHub", cta3:"Add-on de Home Assistant",
+    cap:"Grabado con TVs simuladas: una carta de ajuste hace de pantalla.",
+    f_h:"Todo el salón, en una pestaña.", f_s:"Añade tus TVs una vez. Cambia entre ellas con un clic o con las teclas 1–9.",
+    f1h:"Pantalla en vivo", f1p:"Vídeo H.264 real de Android TV y Fire TV, decodificado en tu navegador. No son capturas.",
+    f2h:"Pared de TVs", f2p:"Todas las TVs a la vez: una captura fresca, la app en primer plano y el volumen. Enciende o apaga cada una desde su tarjeta.",
+    f3h:"Un mando de verdad", f3p:"Cruceta, transporte, volumen, escritura en vivo, lanzador de apps y entradas HDMI. Con atajos de teclado.",
+    f4h:"Home Assistant, de serie", f4p:"Un add-on sin pantalla de login, un <code>media_player</code> por TV, descubrimiento MQTT y una tarjeta para tu panel.",
+    f5h:"Encendido y Wake-on-LAN", f5p:"Todas las TVs encendidas o apagadas con un clic. Las que duermen se despiertan por red y se reconectan solas.",
+    f6h:"Seguro por defecto", f6p:"Contraseñas Argon2id, sesiones, protección CSRF, bloqueo por fuerza bruta, tokens de API y registro de auditoría.",
+    t_h:"Seis familias, una interfaz.", t_s:"Cada controlador habla con la TV por tu red local. Sin nube del fabricante, sin cuenta.",
+    tv_an:"ADB por TCP. Imagen H.264 en vivo, apps y escritura de texto.", live:"pantalla en vivo", tg_f:"Funciones", tg_t:"TVs compatibles", tg_q:"Inicio rápido", tg_h:"Home Assistant", tg_o:"Código abierto",
+    tv_lg:"Red local, sin cuenta de LG. Volumen y mute reales, apagado y apps.", tv_hi:"Por MQTT. Teclas del mando y volumen, Wake-on-LAN.",
+    tv_sa:"2016 en adelante por WebSocket. Teclas, encendido y apps.", tv_so:"REST y códigos IR con clave precompartida. Volumen real y entradas HDMI.",
+    tv_ro:"ECP en el puerto 8060, sin emparejar. Reproductores y Roku TV.", exp:"experimental", exp2:"experimental", exp3:"experimental",
+    i_h:"En marcha en un minuto.", i_s:"Elige cómo montas las cosas en casa.", tab_addon:"Add-on HA", tab_src:"Desde el código",
+    p_docker:"Intel/AMD y Apple Silicon / Raspberry Pi, en una línea:", copy:"Copiar", copy2:"Copiar",
+    p_addon:"Para Home Assistant OS / Supervised. Se abre desde la barra lateral y Home Assistant te identifica.",
+    a1:"Añade el repositorio a Home Assistant (botón de abajo).", a2:"Instala <b>TVHub</b>, arráncalo y activa <b>Mostrar en la barra lateral</b>.", a3:"Opcional: activa <b>install_integration</b> y la integración se configura sola.",
+    p_hacs:"La integración da un <code>media_player</code> por TV y la tarjeta del panel.",
+    h1:"HACS → ⋮ → <b>Repositorios personalizados</b> → <code>https://github.com/xavilitoh/tvhub</code>, categoría <b>Integración</b>.", h2:"Descarga <b>TVHub</b> y reinicia Home Assistant.", h3:"<b>Añadir integración → TVHub</b> (o acepta <b>TVHub detectado</b> si usas el add-on).",
+    p_src:"Constrúyelo tú con Docker Compose:",
+    ha_h:"Hecho para vivir junto a Home Assistant.", ha_s:"Usa las piezas que necesites. Todas acaban en el mismo dispositivo.",
+    ha1h:"Add-on con Ingress", ha1p:"Un clic en la barra lateral, sin otro login, datos conservados entre actualizaciones y el broker Mosquitto detectado solo.",
+    ha2h:"media_player por TV", ha2p:"Encendido, volumen, play/pausa y la lista de apps como fuentes. Funciona con asistentes de voz y automatizaciones.",
+    ha3h:"MQTT y tarjeta de mando", ha3p:"Botones, selector de apps y sensores por descubrimiento MQTT, y una tarjeta TVHub Remote para tu panel.",
+    c_h:"Tus TVs. Tu red. Tus datos.", c1:"Licencia MIT", c2:"Sin suscripción", c3:"Sin versión en la nube", c4:"Nada sale de tu casa",
+    c_rel:"Versiones y cambios", c_iss:"Informar de un problema"
+  }
+};
+const EN = {}; document.querySelectorAll("[data-i]").forEach(e => EN[e.dataset.i] = e.innerHTML);
+function setLang(l){
+  document.documentElement.lang = l;
+  document.querySelectorAll("[data-i]").forEach(e => { const v = l === "es" ? I.es[e.dataset.i] : EN[e.dataset.i]; if (v != null) e.innerHTML = v; });
+  document.getElementById("lang").textContent = l === "es" ? "EN" : "ES";
+  try { localStorage.setItem("tvhub.lang", l); } catch (_) {}
+}
+let lang = (navigator.language || "").toLowerCase().startsWith("es") ? "es" : "en";
+try { lang = localStorage.getItem("tvhub.lang") || lang; } catch (_) {}
+if (lang === "es") setLang("es");
+document.getElementById("lang").onclick = () => setLang(document.documentElement.lang === "es" ? "en" : "es");
+
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
+  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("on", p.id === "p-" + t.dataset.tab));
+});
+document.querySelectorAll(".copy").forEach(b => b.onclick = async () => {
+  const txt = [...b.parentElement.childNodes].filter(n => n !== b).map(n => n.textContent).join("").replace(/^\$ /gm, "").replace(/^# .*$/gm, "").trim();
+  try { await navigator.clipboard.writeText(txt); const o = b.textContent; b.textContent = "✓"; setTimeout(() => b.textContent = o, 1400); } catch (_) {}
+});
+fetch("https://api.github.com/repos/xavilitoh/tvhub/releases/latest").then(r => r.ok ? r.json() : null).then(j => {
+  if (j && j.tag_name) document.getElementById("ver").textContent = j.tag_name + " · MIT";
+}).catch(() => {});
+</script>
+</body>
+</html>

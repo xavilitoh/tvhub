@@ -8,6 +8,13 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+### Changed
+- New logo and icons ("the wall": four screens, one active) in coral, with a light-background variant; favicon and touch icon for the landing.
+- Accent colour is now coral `#f5654a` (was blue) in the web app and the landing page; new demo GIF.
+
+### Added
+- Landing page (`docs/index.html`, English / Español) for GitHub Pages.
+
 ## [0.8.2] - 2026-11-13
 
 ### Fixed
