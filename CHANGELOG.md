@@ -8,6 +8,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-11-13
+
 ### Changed
 - The project moved from the GitHub account `xavilitoh` to `wxberroa`. The container image is now `ghcr.io/wxberroa/tvhub` (the old name does not redirect), and the repository, add-on, HACS and website links point to the new account. See the README for how to update.
 
@@ -118,7 +120,8 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ### Added
 - First release: control Android TV / Fire TV (live screen over ADB), LG webOS and Hisense VIDAA from the browser, with a Home Assistant bridge over MQTT.
 
-[Unreleased]: https://github.com/wxberroa/tvhub/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/wxberroa/tvhub/compare/v0.8.3...HEAD
+[0.8.3]: https://github.com/wxberroa/tvhub/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/wxberroa/tvhub/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/wxberroa/tvhub/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/wxberroa/tvhub/compare/v0.7.3...v0.8.0
