@@ -5,8 +5,8 @@ every Home Assistant user who can open the panel is an administrator in TVHub.
 
 ## Install
 
-1. [![Open your Home Assistant instance and show the add add-on repository dialog with this repository pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fxavilitoh%2Ftvhub)
-   or by hand: *Settings → Add-ons → Add-on store → ⋮ → Repositories* and add `https://github.com/xavilitoh/tvhub`.
+1. [![Open your Home Assistant instance and show the add add-on repository dialog with this repository pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fwxberroa%2Ftvhub)
+   or by hand: *Settings → Add-ons → Add-on store → ⋮ → Repositories* and add `https://github.com/wxberroa/tvhub`.
 2. Install **TVHub**, start it and enable *Show in sidebar*.
 3. Add your TVs (see the main README for each brand).
 

@@ -8,6 +8,11 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-11-13
+
+### Changed
+- The project moved from the GitHub account `xavilitoh` to `wxberroa`. The container image is now `ghcr.io/wxberroa/tvhub` (the old name does not redirect), and the repository, add-on, HACS and website links point to the new account. See the README for how to update.
+
 ### Changed
 - New logo and icons ("the wall": four screens, one active) in coral, with a light-background variant; favicon and touch icon for the landing.
 - Accent colour is now coral `#f5654a` (was blue) in the web app and the landing page; new demo GIF.
@@ -44,7 +49,7 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ## [0.7.1] - 2026-11-12
 
 ### Added
-- CI publishes `ghcr.io/xavilitoh/tvhub:dev` on every push to `dev` (never `latest`), and a hidden **TVHub (dev)** add-on (Advanced mode) runs it next to the stable one.
+- CI publishes `ghcr.io/wxberroa/tvhub:dev` on every push to `dev` (never `latest`), and a hidden **TVHub (dev)** add-on (Advanced mode) runs it next to the stable one.
 - Add-on option **port** (Configuration tab) to choose the port for direct access instead of the fixed 8080. Ingress now uses its own fixed port (8099), so it keeps working whatever you choose.
 
 ### Changed
@@ -54,7 +59,7 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ## [0.7.0] - 2026-11-12
 
 ### Added
-- **Home Assistant add-on** (HA OS / Supervised): add `https://github.com/xavilitoh/tvhub` as a repository and TVHub opens from the sidebar through Ingress. Home Assistant signs you in, so there is no TVHub login there; direct access on port 8080 keeps the normal login.
+- **Home Assistant add-on** (HA OS / Supervised): add `https://github.com/wxberroa/tvhub` as a repository and TVHub opens from the sidebar through Ingress. Home Assistant signs you in, so there is no TVHub login there; direct access on port 8080 keeps the normal login.
 - `TVHUB_AUTH=ingress` mode: the login is skipped only for connections from the Supervisor (`172.30.32.2`) carrying `X-Ingress-Path`, and only when the Supervisor also provided `SUPERVISOR_TOKEN`. Browser writes are checked against the Home Assistant origin.
 - Release notes are now taken from this file.
 - `docs/demo-src`: scripts that regenerate the README demo against simulated TVs.
@@ -115,18 +120,19 @@ in `custom_components/tvhub/manifest.json` and `tvhub_addon/config.yaml`, and pu
 ### Added
 - First release: control Android TV / Fire TV (live screen over ADB), LG webOS and Hisense VIDAA from the browser, with a Home Assistant bridge over MQTT.
 
-[Unreleased]: https://github.com/xavilitoh/tvhub/compare/v0.8.2...HEAD
-[0.8.2]: https://github.com/xavilitoh/tvhub/compare/v0.8.1...v0.8.2
-[0.8.1]: https://github.com/xavilitoh/tvhub/compare/v0.8.0...v0.8.1
-[0.8.0]: https://github.com/xavilitoh/tvhub/compare/v0.7.3...v0.8.0
-[0.7.3]: https://github.com/xavilitoh/tvhub/compare/v0.7.2...v0.7.3
-[0.7.2]: https://github.com/xavilitoh/tvhub/compare/v0.7.1...v0.7.2
-[0.7.1]: https://github.com/xavilitoh/tvhub/compare/v0.7.0...v0.7.1
-[0.7.0]: https://github.com/xavilitoh/tvhub/compare/v0.6.1...v0.7.0
-[0.6.1]: https://github.com/xavilitoh/tvhub/compare/v0.6.0...v0.6.1
-[0.6.0]: https://github.com/xavilitoh/tvhub/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/xavilitoh/tvhub/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/xavilitoh/tvhub/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/xavilitoh/tvhub/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/xavilitoh/tvhub/compare/v0.1.1...v0.2.0
-[0.1.1]: https://github.com/xavilitoh/tvhub/compare/v0.1.0...v0.1.1
+[Unreleased]: https://github.com/wxberroa/tvhub/compare/v0.8.3...HEAD
+[0.8.3]: https://github.com/wxberroa/tvhub/compare/v0.8.2...v0.8.3
+[0.8.2]: https://github.com/wxberroa/tvhub/compare/v0.8.1...v0.8.2
+[0.8.1]: https://github.com/wxberroa/tvhub/compare/v0.8.0...v0.8.1
+[0.8.0]: https://github.com/wxberroa/tvhub/compare/v0.7.3...v0.8.0
+[0.7.3]: https://github.com/wxberroa/tvhub/compare/v0.7.2...v0.7.3
+[0.7.2]: https://github.com/wxberroa/tvhub/compare/v0.7.1...v0.7.2
+[0.7.1]: https://github.com/wxberroa/tvhub/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/wxberroa/tvhub/compare/v0.6.1...v0.7.0
+[0.6.1]: https://github.com/wxberroa/tvhub/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/wxberroa/tvhub/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/wxberroa/tvhub/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/wxberroa/tvhub/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/wxberroa/tvhub/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/wxberroa/tvhub/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/wxberroa/tvhub/compare/v0.1.0...v0.1.1

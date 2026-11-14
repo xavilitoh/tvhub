@@ -1,9 +1,9 @@
 name: TVHub (dev)
-# "dev" is also the image tag: ghcr.io/xavilitoh/tvhub:dev, rebuilt by CI on every push to the dev branch.
+# "dev" is also the image tag: ghcr.io/wxberroa/tvhub:dev, rebuilt by CI on every push to the dev branch.
 version: "dev"
 slug: tvhub_dev
 description: Test build of TVHub from the dev branch. Unstable; use the TVHub add-on for daily use.
-url: https://github.com/xavilitoh/tvhub
+url: https://github.com/wxberroa/tvhub
 # Hidden in the store unless "Advanced mode" is on in your Home Assistant profile.
 stage: experimental
 arch:

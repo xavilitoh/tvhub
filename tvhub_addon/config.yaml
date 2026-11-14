@@ -1,8 +1,8 @@
 name: TVHub
-version: "0.8.2"
+version: "0.8.3"
 slug: tvhub
 description: One web remote for all your TVs (Android TV / Fire TV, LG, Samsung, Sony, Roku, Hisense)
-url: https://github.com/xavilitoh/tvhub
+url: https://github.com/wxberroa/tvhub
 arch:
   - amd64
   - aarch64

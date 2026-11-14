@@ -7,7 +7,7 @@
 <meta name="description" content="One web remote for all your TVs: Android TV / Fire TV with a live picture of the screen, LG webOS, Samsung, Sony, Roku and Hisense. Open source, runs on your network, works with Home Assistant.">
 <meta property="og:title" content="TVHub — one remote for all your TVs">
 <meta property="og:description" content="Android TV, Fire TV, LG, Samsung, Sony, Roku and Hisense in one web app. Open source. Home Assistant add-on included.">
-<meta property="og:image" content="https://xavilitoh.github.io/tvhub/icon-1024.png">
+<meta property="og:image" content="https://wxberroa.github.io/tvhub/icon-1024.png">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#08080a">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
@@ -114,7 +114,7 @@ footer a:hover{color:var(--text)}
     <a href="#tvs" data-i="nav_tvs">Supported TVs</a>
     <a href="#install" data-i="nav_install">Install</a>
     <a href="#ha" data-i="nav_ha">Home Assistant</a>
-    <a href="https://github.com/xavilitoh/tvhub#readme" data-i="nav_docs">Docs</a>
+    <a href="https://github.com/wxberroa/tvhub#readme" data-i="nav_docs">Docs</a>
   </div>
   <div class="sp"></div>
   <button class="ghost" id="lang" aria-label="Language">ES</button>
@@ -128,7 +128,7 @@ footer a:hover{color:var(--text)}
   <p class="lead" data-i="lead">Android TV, Fire TV, LG, Samsung, Sony, Roku and Hisense in a single web app — with a live picture of the screen, a wall of every TV at once, and Home Assistant built in.</p>
   <div class="cta">
     <a class="btn primary" href="#install" data-i="cta1">Get started</a>
-    <a class="btn" href="https://github.com/xavilitoh/tvhub" data-i="cta2">★ View on GitHub</a>
+    <a class="btn" href="https://github.com/wxberroa/tvhub" data-i="cta2">★ View on GitHub</a>
     <a class="btn" href="#ha" data-i="cta3">Home Assistant add-on</a>
   </div>
   <div class="ver" id="ver">&nbsp;</div>
@@ -179,7 +179,7 @@ footer a:hover{color:var(--text)}
       <p data-i="p_docker">Intel/AMD and Apple Silicon / Raspberry Pi, one line:</p>
       <pre><button class="copy" data-i="copy">Copy</button><span class="p">$</span> docker run -d --name tvhub --restart unless-stopped \
     -p 127.0.0.1:8080:8080 -v tvhub-data:/data \
-    ghcr.io/xavilitoh/tvhub:latest
+    ghcr.io/wxberroa/tvhub:latest
 <span class="c"># then open</span>
 <span class="p">$</span> open http://localhost:8080</pre>
     </div>
@@ -190,20 +190,20 @@ footer a:hover{color:var(--text)}
         <li data-i="a2">Install <b>TVHub</b>, start it and turn on <b>Show in sidebar</b>.</li>
         <li data-i="a3">Optional: turn on <b>install_integration</b> and the integration sets itself up.</li>
       </ol>
-      <a class="hass" href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fxavilitoh%2Ftvhub"><img alt="Add add-on repository to my Home Assistant" src="https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg"></a>
+      <a class="hass" href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fwxberroa%2Ftvhub"><img alt="Add add-on repository to my Home Assistant" src="https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg"></a>
     </div>
     <div class="panel" id="p-hacs">
       <p data-i="p_hacs">The integration gives every TV a <code>media_player</code> and the dashboard card.</p>
       <ol class="steps">
-        <li data-i="h1">HACS → ⋮ → <b>Custom repositories</b> → <code>https://github.com/xavilitoh/tvhub</code>, category <b>Integration</b>.</li>
+        <li data-i="h1">HACS → ⋮ → <b>Custom repositories</b> → <code>https://github.com/wxberroa/tvhub</code>, category <b>Integration</b>.</li>
         <li data-i="h2">Download <b>TVHub</b> and restart Home Assistant.</li>
         <li data-i="h3"><b>Add integration → TVHub</b> (or accept <b>TVHub discovered</b> when you use the add-on).</li>
       </ol>
-      <a class="hass" href="https://my.home-assistant.io/redirect/hacs_repository/?owner=xavilitoh&repository=tvhub&category=integration"><img alt="Open in HACS" src="https://my.home-assistant.io/badges/hacs_repository.svg"></a>
+      <a class="hass" href="https://my.home-assistant.io/redirect/hacs_repository/?owner=wxberroa&repository=tvhub&category=integration"><img alt="Open in HACS" src="https://my.home-assistant.io/badges/hacs_repository.svg"></a>
     </div>
     <div class="panel" id="p-src">
       <p data-i="p_src">Build it yourself with Docker Compose:</p>
-      <pre><button class="copy" data-i="copy2">Copy</button><span class="p">$</span> git clone https://github.com/xavilitoh/tvhub &amp;&amp; cd tvhub
+      <pre><button class="copy" data-i="copy2">Copy</button><span class="p">$</span> git clone https://github.com/wxberroa/tvhub &amp;&amp; cd tvhub
 <span class="p">$</span> docker compose up -d --build
 <span class="p">$</span> open http://localhost:8080</pre>
     </div>
@@ -226,17 +226,17 @@ footer a:hover{color:var(--text)}
   <div class="points"><span data-i="c1">MIT licensed</span><span data-i="c2">No subscription</span><span data-i="c3">No hosted tier</span><span data-i="c4">Nothing leaves your home</span></div>
   <div class="cta">
     <a class="btn primary" href="#install" data-i="cta1b">Get started</a>
-    <a class="btn" href="https://github.com/xavilitoh/tvhub/releases" data-i="c_rel">Releases &amp; changelog</a>
-    <a class="btn" href="https://github.com/xavilitoh/tvhub/issues" data-i="c_iss">Report an issue</a>
+    <a class="btn" href="https://github.com/wxberroa/tvhub/releases" data-i="c_rel">Releases &amp; changelog</a>
+    <a class="btn" href="https://github.com/wxberroa/tvhub/issues" data-i="c_iss">Report an issue</a>
   </div>
 </div></section>
 
 <footer><div class="wrap">
   <span>© TVHub · MIT</span><div class="sp" style="flex:1"></div>
-  <a href="https://github.com/xavilitoh/tvhub">GitHub</a>
-  <a href="https://github.com/xavilitoh/tvhub/blob/main/CHANGELOG.md">Changelog</a>
-  <a href="https://github.com/xavilitoh/tvhub#readme">Docs</a>
-  <a href="https://github.com/xavilitoh/tvhub/pkgs/container/tvhub">Docker image</a>
+  <a href="https://github.com/wxberroa/tvhub">GitHub</a>
+  <a href="https://github.com/wxberroa/tvhub/blob/main/CHANGELOG.md">Changelog</a>
+  <a href="https://github.com/wxberroa/tvhub#readme">Docs</a>
+  <a href="https://github.com/wxberroa/tvhub/pkgs/container/tvhub">Docker image</a>
 </div></footer>
 
 <script>
@@ -265,7 +265,7 @@ const I = {
     p_addon:"Para Home Assistant OS / Supervised. Se abre desde la barra lateral y Home Assistant te identifica.",
     a1:"Añade el repositorio a Home Assistant (botón de abajo).", a2:"Instala <b>TVHub</b>, arráncalo y activa <b>Mostrar en la barra lateral</b>.", a3:"Opcional: activa <b>install_integration</b> y la integración se configura sola.",
     p_hacs:"La integración da un <code>media_player</code> por TV y la tarjeta del panel.",
-    h1:"HACS → ⋮ → <b>Repositorios personalizados</b> → <code>https://github.com/xavilitoh/tvhub</code>, categoría <b>Integración</b>.", h2:"Descarga <b>TVHub</b> y reinicia Home Assistant.", h3:"<b>Añadir integración → TVHub</b> (o acepta <b>TVHub detectado</b> si usas el add-on).",
+    h1:"HACS → ⋮ → <b>Repositorios personalizados</b> → <code>https://github.com/wxberroa/tvhub</code>, categoría <b>Integración</b>.", h2:"Descarga <b>TVHub</b> y reinicia Home Assistant.", h3:"<b>Añadir integración → TVHub</b> (o acepta <b>TVHub detectado</b> si usas el add-on).",
     p_src:"Constrúyelo tú con Docker Compose:",
     ha_h:"Hecho para vivir junto a Home Assistant.", ha_s:"Usa las piezas que necesites. Todas acaban en el mismo dispositivo.",
     ha1h:"Add-on con Ingress", ha1p:"Un clic en la barra lateral, sin otro login, datos conservados entre actualizaciones y el broker Mosquitto detectado solo.",
@@ -295,7 +295,7 @@ document.querySelectorAll(".copy").forEach(b => b.onclick = async () => {
   const txt = [...b.parentElement.childNodes].filter(n => n !== b).map(n => n.textContent).join("").replace(/^\$ /gm, "").replace(/^# .*$/gm, "").trim();
   try { await navigator.clipboard.writeText(txt); const o = b.textContent; b.textContent = "✓"; setTimeout(() => b.textContent = o, 1400); } catch (_) {}
 });
-fetch("https://api.github.com/repos/xavilitoh/tvhub/releases/latest").then(r => r.ok ? r.json() : null).then(j => {
+fetch("https://api.github.com/repos/wxberroa/tvhub/releases/latest").then(r => r.ok ? r.json() : null).then(j => {
   if (j && j.tag_name) document.getElementById("ver").textContent = j.tag_name + " · MIT";
 }).catch(() => {});
 </script>

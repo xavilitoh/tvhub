@@ -41,7 +41,7 @@ Keep a list of TVs, switch between them with one click (or keys <kbd>1</kbd>–<
 One line, with the published image (Intel/AMD and Apple Silicon / Raspberry Pi):
 
 ```bash
-docker run -d --name tvhub --restart unless-stopped -p 127.0.0.1:8080:8080 -v tvhub-data:/data ghcr.io/xavilitoh/tvhub:latest
+docker run -d --name tvhub --restart unless-stopped -p 127.0.0.1:8080:8080 -v tvhub-data:/data ghcr.io/wxberroa/tvhub:latest
 open http://localhost:8080
 ```
 
@@ -50,7 +50,7 @@ The first time you open it, TVHub asks you to create the **administrator account
 Or build it from source:
 
 ```bash
-git clone https://github.com/xavilitoh/tvhub && cd tvhub
+git clone https://github.com/wxberroa/tvhub && cd tvhub
 docker compose up -d --build
 open http://localhost:8080
 ```
@@ -94,8 +94,8 @@ No pairing. Add a TV of type **Roku** with its IP (port 8060). If it doesn't ans
 
 If you run **Home Assistant OS** or **Supervised**, install TVHub as an add-on instead of a separate Docker container. It opens from the HA sidebar and **Home Assistant signs you in, so there is no TVHub login page** there.
 
-1. [![Open your Home Assistant instance and show the add add-on repository dialog with this repository pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fxavilitoh%2Ftvhub)
-   or by hand: *Settings → Add-ons → Add-on store → ⋮ → Repositories* → add `https://github.com/xavilitoh/tvhub`.
+1. [![Open your Home Assistant instance and show the add add-on repository dialog with this repository pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fwxberroa%2Ftvhub)
+   or by hand: *Settings → Add-ons → Add-on store → ⋮ → Repositories* → add `https://github.com/wxberroa/tvhub`.
 2. Install **TVHub**, start it and turn on *Show in sidebar*.
 
 Details:
@@ -105,7 +105,7 @@ Details:
 - **The integration sets itself up:** the add-on announces itself to Home Assistant through the Supervisor, so once the TVHub integration is installed a **"TVHub discovered"** card appears under *Settings → Devices & services*: confirm it, no IP or token to type (it uses an API token the add-on creates, named *Home Assistant (add-on)*). Don't have the integration yet? Turn on the add-on option **install_integration** (off by default): it copies the integration into `/config/custom_components/tvhub` (restart Home Assistant afterwards). It never touches a copy installed with HACS or by hand. Note that this add-on mounts Home Assistant's config folder read-write so that option can work; TVHub writes there only when the option is on.
 - **MQTT with no typing:** if you run the **Mosquitto broker** add-on, TVHub asks the Supervisor for its login the first time it starts and connects by itself (your TVs show up under *MQTT*). Installed Mosquitto later? Open **Home Assistant** in the TVHub menu and press **Usar el broker de Home Assistant**. With an external broker, fill the form by hand as usual: Home Assistant does not share the credentials of an external broker.
 - Home Assistant *Container* / *Core* installs have no add-ons: use the Docker image from [Quick start](#quick-start) next to it.
-- **Try the dev build:** every push to the `dev` branch publishes `ghcr.io/xavilitoh/tvhub:dev`. To test it in Home Assistant, turn on *Advanced mode* (your profile) and install **TVHub (dev)** from the same repository; it has its own data and ports (8081 direct, 8098 Ingress), so it runs next to the stable add-on. With plain Docker use `ghcr.io/xavilitoh/tvhub:dev`.
+- **Try the dev build:** every push to the `dev` branch publishes `ghcr.io/wxberroa/tvhub:dev`. To test it in Home Assistant, turn on *Advanced mode* (your profile) and install **TVHub (dev)** from the same repository; it has its own data and ports (8081 direct, 8098 Ingress), so it runs next to the stable add-on. With plain Docker use `ghcr.io/wxberroa/tvhub:dev`.
 - The add-on is the same image plus `TVHUB_AUTH=ingress`; see [Security](#security) for how the login is skipped safely.
 
 Parts 1–3 below work the same with the add-on or with the standalone image. Both land on the **same device** in Home Assistant.
@@ -132,8 +132,8 @@ Settings are saved in `/data/ha.json` (readable only by the TVHub user, password
 MQTT can't create `media_player` entities, so TVHub also ships a small Home Assistant integration (`custom_components/tvhub`). It gives every TV a **media_player** with on/off, volume (slider, steps, mute), play/pause/stop/rewind/forward, and the **app list as sources** — it works with the standard media control card, voice assistants and automations (`media_player.select_source`, `media_player.volume_set`…).
 
 1. Let Home Assistant reach TVHub: create a `.env` file next to `docker-compose.yml` (it is git-ignored) with `TVHUB_BIND=0.0.0.0`, then `docker compose up -d --build`. In the web UI open ☰ → **Usuarios → Tokens de API**, create a token for Home Assistant and copy it (it is shown only once).
-2. Install the integration with **HACS**: [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=xavilitoh&repository=tvhub&category=integration)
-   or by hand: HACS → ⋮ → *Custom repositories* → `https://github.com/xavilitoh/tvhub`, category **Integration** → *Download* → restart Home Assistant. (Without HACS, copy `custom_components/tvhub` into your `config/custom_components/`.)
+2. Install the integration with **HACS**: [![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=wxberroa&repository=tvhub&category=integration)
+   or by hand: HACS → ⋮ → *Custom repositories* → `https://github.com/wxberroa/tvhub`, category **Integration** → *Download* → restart Home Assistant. (Without HACS, copy `custom_components/tvhub` into your `config/custom_components/`.)
 3. *Settings → Devices & services → Add integration → TVHub*: the IP of the machine running TVHub, port 8080, and the API token. (API tokens have the `user` role: they can control TVs but not add/remove TVs or manage users.)
 
 State refreshes every 3 s. *Volume set* works on LG and Hisense; a Fire Stick whose volume goes to your LG/Hisense (see *Volume routing*) shows and controls that TV's volume. *Turn on* uses Wake-on-LAN on LG (give TVHub the TV's MAC) and wake/sleep keys on Android TV.
@@ -157,6 +157,10 @@ action: tvhub.send_key
 target: { entity_id: media_player.lg_sala }
 data: { key: HOME }               # DPAD_UP, DPAD_CENTER, BACK, MENU, MEDIA_PLAY_PAUSE, VOLUME_UP…
 ```
+
+## Moved to `wxberroa`
+
+The GitHub account was renamed from `xavilitoh` to `wxberroa`. GitHub redirects the repository and git URLs, but **not** container images: use `ghcr.io/wxberroa/tvhub` instead of `ghcr.io/xavilitoh/tvhub` in `docker run`, `docker-compose.yml` and Portainer. The Home Assistant add-on and HACS pick the new address up by themselves after updating; if you added the repository by hand, the old URL keeps redirecting for now, but replace it with `https://github.com/wxberroa/tvhub`. The website is now at `https://wxberroa.github.io/tvhub/`. Please don't rely on the old name anymore: it may be taken by someone else.
 
 ## Upgrading from the old name (TVDeck)
 
